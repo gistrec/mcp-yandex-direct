@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { fail, ok } from "./util.js";
+import { fail, isoDate, ok } from "./util.js";
 
 export const REPORT_TYPES = [
   "ACCOUNT_PERFORMANCE_REPORT",
@@ -62,8 +62,8 @@ export function registerStatisticsTools(server: McpServer, client: YandexDirectC
           .enum(DATE_RANGES)
           .optional()
           .describe("Predefined date range. Inferred as CUSTOM_DATE when dateFrom/dateTo are given."),
-        dateFrom: z.string().optional().describe("Start date YYYY-MM-DD (required for CUSTOM_DATE)."),
-        dateTo: z.string().optional().describe("End date YYYY-MM-DD (required for CUSTOM_DATE)."),
+        dateFrom: isoDate.optional().describe("Start date YYYY-MM-DD (required for CUSTOM_DATE)."),
+        dateTo: isoDate.optional().describe("End date YYYY-MM-DD (required for CUSTOM_DATE)."),
         fieldNames: z.array(z.string()).optional().describe("Report columns (must be valid for the report type)."),
         campaignIds: z.array(z.number().int()).optional().describe("Limit the report to these campaign ids."),
         includeVat: z.boolean().optional().describe("Whether costs include VAT. Default true."),

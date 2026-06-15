@@ -1,5 +1,11 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
 import { YandexDirectError } from "../types.js";
+
+/** A date in YYYY-MM-DD form, validated before the request reaches the API. */
+export const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Must be a date in YYYY-MM-DD format");
 
 export function ok(data: unknown): CallToolResult {
   const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
