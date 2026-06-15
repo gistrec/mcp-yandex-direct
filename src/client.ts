@@ -1,5 +1,6 @@
 import type { ApiError, YandexDirectConfig } from "./types.js";
 import { YandexDirectError } from "./types.js";
+import { DEFAULT_PAGE_LIMIT } from "./tools/util.js";
 
 const PROD_BASE = "https://api.direct.yandex.com/json/v5/";
 const SANDBOX_BASE = "https://api-sandbox.direct.yandex.com/json/v5/";
@@ -107,6 +108,44 @@ export class YandexDirectClient {
       }
       return data.result as T;
     }
+  }
+
+  /**
+   * Runs a `get` request, following the LimitedBy cursor to fetch every page
+   * and merging the entity array, so large accounts are not silently truncated.
+   * Bounded by maxPages; if the cap is hit, LimitedBy is kept as a "more remains"
+   * signal.
+   */
+  async getAll<T = unknown>(
+    service: string,
+    params: Record<string, unknown>,
+    maxPages = 100,
+  ): Promise<T> {
+    const basePage = (params.Page as Record<string, unknown> | undefined) ?? {};
+    const limit = Number(basePage.Limit ?? DEFAULT_PAGE_LIMIT);
+    let offset = Number(basePage.Offset ?? 0);
+    let merged: Record<string, unknown> | undefined;
+    let entityKey: string | undefined;
+
+    for (let page = 0; page < maxPages; page++) {
+      const pageParams = { ...params, Page: { Limit: limit, Offset: offset } };
+      const result = await this.call<Record<string, unknown>>(service, "get", pageParams);
+
+      if (!merged) {
+        merged = result;
+        entityKey = Object.keys(result).find((key) => Array.isArray(result[key]));
+      } else if (entityKey && Array.isArray(result[entityKey])) {
+        (merged[entityKey] as unknown[]).push(...(result[entityKey] as unknown[]));
+      }
+
+      const limitedBy = result.LimitedBy;
+      if (typeof limitedBy !== "number") {
+        delete merged.LimitedBy;
+        return merged as T;
+      }
+      offset = limitedBy;
+    }
+    return merged as T;
   }
 
   /** Requests a TSV statistics report, polling while Yandex generates it. */

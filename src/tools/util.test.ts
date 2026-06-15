@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeMoney, okOrPartial, toMicros } from "./util.js";
+import { DEFAULT_PAGE_LIMIT, buildPage, normalizeMoney, okOrPartial, toMicros } from "./util.js";
 
 function textOf(result: { content: { type: string; text: string }[] }): string {
   return result.content.map((c) => c.text).join("");
@@ -38,6 +38,13 @@ test("okOrPartial flags an all-failed action response", () => {
 test("okOrPartial ignores arrays that are not *Results", () => {
   const result = okOrPartial({ Campaigns: [{ Id: 1, Errors: [{ Message: "x" }] }] });
   assert.equal(result.isError, undefined);
+});
+
+test("buildPage defaults Limit/Offset and skips when nothing is requested", () => {
+  assert.equal(buildPage(undefined, undefined), undefined);
+  assert.deepEqual(buildPage(50, 10), { Limit: 50, Offset: 10 });
+  assert.deepEqual(buildPage(undefined, 20), { Limit: DEFAULT_PAGE_LIMIT, Offset: 20 });
+  assert.deepEqual(buildPage(50, undefined), { Limit: 50, Offset: 0 });
 });
 
 test("toMicros rounds currency units to integer micros", () => {

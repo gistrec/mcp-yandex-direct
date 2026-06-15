@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { compact, fail, ok, okOrPartial } from "./util.js";
+import { buildPage, compact, fail, ok, okOrPartial } from "./util.js";
 
 const DEFAULT_FIELDS = ["Id", "Name", "CampaignId", "RegionIds", "Status", "Type"];
 
@@ -16,10 +16,15 @@ export function registerAdGroupTools(server: McpServer, client: YandexDirectClie
         campaignIds: z.array(z.number().int()).optional().describe("Filter by campaign ids."),
         ids: z.array(z.number().int()).optional().describe("Filter by ad group ids."),
         fieldNames: z.array(z.string()).optional().describe("Ad group fields to return."),
-        limit: z.number().int().min(1).max(10000).optional().describe("Max number of ad groups."),
+        limit: z.number().int().min(1).max(10000).optional().describe("Max objects per page."),
+        offset: z.number().int().min(0).optional().describe("Pagination offset (objects to skip)."),
+        autoPaginate: z
+          .boolean()
+          .optional()
+          .describe("Fetch all pages by following LimitedBy (ignores limit as a total cap)."),
       },
     },
-    async ({ campaignIds, ids, fieldNames, limit }) => {
+    async ({ campaignIds, ids, fieldNames, limit, offset, autoPaginate }) => {
       try {
         const selection = compact({
           CampaignIds: campaignIds?.length ? campaignIds : undefined,
@@ -29,8 +34,11 @@ export function registerAdGroupTools(server: McpServer, client: YandexDirectClie
           SelectionCriteria: selection,
           FieldNames: fieldNames?.length ? fieldNames : DEFAULT_FIELDS,
         };
-        if (limit) params.Page = { Limit: limit };
-        const result = await client.call("adgroups", "get", params);
+        const page = buildPage(limit, offset);
+        if (page) params.Page = page;
+        const result = autoPaginate
+          ? await client.getAll("adgroups", params)
+          : await client.call("adgroups", "get", params);
         return ok(result);
       } catch (e) {
         return fail(e);

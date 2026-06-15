@@ -101,6 +101,22 @@ export function normalizeMoney<T>(value: T, fields: Set<string> = MONEY_FIELDS):
   return value;
 }
 
+/** Largest page size the get services accept; used as the default per-page limit. */
+export const DEFAULT_PAGE_LIMIT = 10000;
+
+/**
+ * Builds a Page object for a get request. The API requires Limit whenever Page
+ * is present, so Limit defaults to DEFAULT_PAGE_LIMIT when only an offset is given.
+ * Returns undefined when neither limit nor offset is requested.
+ */
+export function buildPage(
+  limit?: number,
+  offset?: number,
+): { Limit: number; Offset: number } | undefined {
+  if (limit === undefined && offset === undefined) return undefined;
+  return { Limit: limit ?? DEFAULT_PAGE_LIMIT, Offset: offset ?? 0 };
+}
+
 /** Drops keys whose value is `undefined` so they are not sent to the API. */
 export function compact<T extends Record<string, unknown>>(obj: T): T {
   return Object.fromEntries(

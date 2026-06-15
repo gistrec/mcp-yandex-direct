@@ -76,6 +76,58 @@ test("call() throws YandexDirectError on API error payload", async () => {
   }
 });
 
+test("getAll merges pages by following LimitedBy and clears it when done", async () => {
+  let calls = 0;
+  const mock = mockFetch(() => {
+    calls++;
+    if (calls === 1) {
+      return new Response(
+        JSON.stringify({ result: { Campaigns: [{ Id: 1 }], LimitedBy: 1 } }),
+        { status: 200 },
+      );
+    }
+    return new Response(JSON.stringify({ result: { Campaigns: [{ Id: 2 }] } }), { status: 200 });
+  });
+  try {
+    const client = new YandexDirectClient({ token: "T", lang: "ru", sandbox: true });
+    const result = await client.getAll<{ Campaigns: { Id: number }[]; LimitedBy?: number }>(
+      "campaigns",
+      { SelectionCriteria: {} },
+    );
+    assert.deepEqual(result.Campaigns, [{ Id: 1 }, { Id: 2 }]);
+    assert.equal(result.LimitedBy, undefined);
+    assert.equal(calls, 2);
+    const secondBody = JSON.parse(mock.calls[1].init.body as string);
+    assert.equal(secondBody.params.Page.Offset, 1);
+  } finally {
+    mock.restore();
+  }
+});
+
+test("getAll stops at maxPages and keeps LimitedBy as a 'more remains' signal", async () => {
+  let calls = 0;
+  const mock = mockFetch(() => {
+    calls++;
+    return new Response(
+      JSON.stringify({ result: { Campaigns: [{ Id: calls }], LimitedBy: calls } }),
+      { status: 200 },
+    );
+  });
+  try {
+    const client = new YandexDirectClient({ token: "T", lang: "ru", sandbox: true });
+    const result = await client.getAll<{ Campaigns: unknown[]; LimitedBy?: number }>(
+      "campaigns",
+      {},
+      2,
+    );
+    assert.equal(calls, 2);
+    assert.equal(result.Campaigns.length, 2);
+    assert.notEqual(result.LimitedBy, undefined);
+  } finally {
+    mock.restore();
+  }
+});
+
 test("report() returns TSV body on HTTP 200", async () => {
   const tsv = "Date\tClicks\n2026-01-01\t10\n";
   const mock = mockFetch(() => new Response(tsv, { status: 200 }));

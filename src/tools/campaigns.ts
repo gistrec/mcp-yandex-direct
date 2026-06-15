@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { compact, fail, normalizeMoney, ok, okOrPartial, toMicros } from "./util.js";
+import { buildPage, compact, fail, normalizeMoney, ok, okOrPartial, toMicros } from "./util.js";
 
 const CAMPAIGN_TYPES = [
   "TEXT_CAMPAIGN",
@@ -53,10 +53,15 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
           .optional()
           .describe("Filter by moderation statuses."),
         fieldNames: z.array(z.string()).optional().describe("Campaign fields to return."),
-        limit: z.number().int().min(1).max(10000).optional().describe("Max number of campaigns."),
+        limit: z.number().int().min(1).max(10000).optional().describe("Max objects per page."),
+        offset: z.number().int().min(0).optional().describe("Pagination offset (objects to skip)."),
+        autoPaginate: z
+          .boolean()
+          .optional()
+          .describe("Fetch all pages by following LimitedBy (ignores limit as a total cap)."),
       },
     },
-    async ({ ids, types, states, statuses, fieldNames, limit }) => {
+    async ({ ids, types, states, statuses, fieldNames, limit, offset, autoPaginate }) => {
       try {
         const selection = compact({
           Ids: ids?.length ? ids : undefined,
@@ -68,8 +73,11 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
           SelectionCriteria: selection,
           FieldNames: fieldNames?.length ? fieldNames : DEFAULT_FIELDS,
         };
-        if (limit) params.Page = { Limit: limit };
-        const result = await client.call("campaigns", "get", params);
+        const page = buildPage(limit, offset);
+        if (page) params.Page = page;
+        const result = autoPaginate
+          ? await client.getAll("campaigns", params)
+          : await client.call("campaigns", "get", params);
         return ok(normalizeMoney(result));
       } catch (e) {
         return fail(e);

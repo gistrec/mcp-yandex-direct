@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { compact, fail, normalizeMoney, ok, okOrPartial, toMicros } from "./util.js";
+import { buildPage, compact, fail, normalizeMoney, ok, okOrPartial, toMicros } from "./util.js";
 
 const DEFAULT_FIELDS = ["Id", "Keyword", "AdGroupId", "CampaignId", "Bid", "ContextBid", "State", "Status"];
 
@@ -17,10 +17,15 @@ export function registerKeywordTools(server: McpServer, client: YandexDirectClie
         adGroupIds: z.array(z.number().int()).optional().describe("Filter by ad group ids."),
         ids: z.array(z.number().int()).optional().describe("Filter by keyword ids."),
         fieldNames: z.array(z.string()).optional().describe("Keyword fields to return."),
-        limit: z.number().int().min(1).max(10000).optional().describe("Max number of keywords."),
+        limit: z.number().int().min(1).max(10000).optional().describe("Max objects per page."),
+        offset: z.number().int().min(0).optional().describe("Pagination offset (objects to skip)."),
+        autoPaginate: z
+          .boolean()
+          .optional()
+          .describe("Fetch all pages by following LimitedBy (ignores limit as a total cap)."),
       },
     },
-    async ({ campaignIds, adGroupIds, ids, fieldNames, limit }) => {
+    async ({ campaignIds, adGroupIds, ids, fieldNames, limit, offset, autoPaginate }) => {
       try {
         const selection = compact({
           CampaignIds: campaignIds?.length ? campaignIds : undefined,
@@ -31,8 +36,11 @@ export function registerKeywordTools(server: McpServer, client: YandexDirectClie
           SelectionCriteria: selection,
           FieldNames: fieldNames?.length ? fieldNames : DEFAULT_FIELDS,
         };
-        if (limit) params.Page = { Limit: limit };
-        const result = await client.call("keywords", "get", params);
+        const page = buildPage(limit, offset);
+        if (page) params.Page = page;
+        const result = autoPaginate
+          ? await client.getAll("keywords", params)
+          : await client.call("keywords", "get", params);
         return ok(normalizeMoney(result));
       } catch (e) {
         return fail(e);

@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { compact, fail, ok, okOrPartial } from "./util.js";
+import { buildPage, compact, fail, ok, okOrPartial } from "./util.js";
 
 const AD_STATES = ["ON", "OFF", "SUSPENDED", "OFF_BY_MONITORING", "ARCHIVED"] as const;
 const AD_STATUSES = ["ACCEPTED", "DRAFT", "MODERATION", "PREACCEPTED", "REJECTED"] as const;
@@ -21,10 +21,15 @@ export function registerAdTools(server: McpServer, client: YandexDirectClient): 
         states: z.array(z.enum(AD_STATES)).optional().describe("Filter by ad states."),
         statuses: z.array(z.enum(AD_STATUSES)).optional().describe("Filter by moderation statuses."),
         fieldNames: z.array(z.string()).optional().describe("Ad fields to return."),
-        limit: z.number().int().min(1).max(10000).optional().describe("Max number of ads."),
+        limit: z.number().int().min(1).max(10000).optional().describe("Max objects per page."),
+        offset: z.number().int().min(0).optional().describe("Pagination offset (objects to skip)."),
+        autoPaginate: z
+          .boolean()
+          .optional()
+          .describe("Fetch all pages by following LimitedBy (ignores limit as a total cap)."),
       },
     },
-    async ({ campaignIds, adGroupIds, ids, states, statuses, fieldNames, limit }) => {
+    async ({ campaignIds, adGroupIds, ids, states, statuses, fieldNames, limit, offset, autoPaginate }) => {
       try {
         const selection = compact({
           CampaignIds: campaignIds?.length ? campaignIds : undefined,
@@ -37,8 +42,11 @@ export function registerAdTools(server: McpServer, client: YandexDirectClient): 
           SelectionCriteria: selection,
           FieldNames: fieldNames?.length ? fieldNames : DEFAULT_FIELDS,
         };
-        if (limit) params.Page = { Limit: limit };
-        const result = await client.call("ads", "get", params);
+        const page = buildPage(limit, offset);
+        if (page) params.Page = page;
+        const result = autoPaginate
+          ? await client.getAll("ads", params)
+          : await client.call("ads", "get", params);
         return ok(result);
       } catch (e) {
         return fail(e);
