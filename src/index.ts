@@ -9,6 +9,7 @@ import { registerAdGroupTools } from "./tools/adGroups.js";
 import { registerAdTools } from "./tools/ads.js";
 import { registerKeywordTools } from "./tools/keywords.js";
 import { registerStatisticsTools } from "./tools/statistics.js";
+import { registerDictionaryTools } from "./tools/dictionaries.js";
 
 function loadConfig(): YandexDirectConfig {
   const token = process.env.YANDEX_DIRECT_TOKEN;
@@ -43,6 +44,7 @@ async function main(): Promise<void> {
   registerAdTools(server, client);
   registerKeywordTools(server, client);
   registerStatisticsTools(server, client);
+  registerDictionaryTools(server, client);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
