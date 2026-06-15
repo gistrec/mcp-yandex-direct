@@ -84,11 +84,20 @@ export function registerAdGroupTools(server: McpServer, client: YandexDirectClie
           .min(1)
           .optional()
           .describe("New target geo region ids."),
+        negativeKeywords: z
+          .array(z.string())
+          .optional()
+          .describe("Replace the ad group's negative keywords; pass an empty array to clear them."),
       },
     },
-    async ({ id, name, regionIds }) => {
+    async ({ id, name, regionIds, negativeKeywords }) => {
       try {
-        const adGroup = compact({ Id: id, Name: name, RegionIds: regionIds });
+        const adGroup = compact({
+          Id: id,
+          Name: name,
+          RegionIds: regionIds,
+          NegativeKeywords: negativeKeywords !== undefined ? { Items: negativeKeywords } : undefined,
+        });
         if (Object.keys(adGroup).length === 1) {
           return fail("Provide at least one field to update.");
         }

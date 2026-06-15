@@ -87,6 +87,23 @@ test("update_ad_group updates regions via adgroups/update", async () => {
   assert.deepEqual(calls[0].params.AdGroups[0], { Id: 9, RegionIds: [225] });
 });
 
+test("update_campaign sets negative keywords as NegativeKeywords.Items", async () => {
+  const { calls, tools } = harness(registerCampaignTools);
+  const res = await tools.update_campaign({ id: 7, negativeKeywords: ["free", "download"] });
+  assert.equal(res.isError, undefined);
+  assert.deepEqual(calls[0].params.Campaigns[0], {
+    Id: 7,
+    NegativeKeywords: { Items: ["free", "download"] },
+  });
+});
+
+test("update_ad_group clears negative keywords with an empty array", async () => {
+  const { calls, tools } = harness(registerAdGroupTools);
+  const res = await tools.update_ad_group({ id: 9, negativeKeywords: [] });
+  assert.equal(res.isError, undefined);
+  assert.deepEqual(calls[0].params.AdGroups[0], { Id: 9, NegativeKeywords: { Items: [] } });
+});
+
 test("update_text_ad updates only provided fields", async () => {
   const { calls, tools } = harness(registerAdTools);
   const res = await tools.update_text_ad({ id: 3, title: "Hi" });

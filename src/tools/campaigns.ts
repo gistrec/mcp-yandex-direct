@@ -169,9 +169,13 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
           .optional()
           .describe("Daily budget in account currency units."),
         dailyBudgetMode: z.enum(["STANDARD", "DISTRIBUTED"]).optional(),
+        negativeKeywords: z
+          .array(z.string())
+          .optional()
+          .describe("Replace the campaign's negative keywords; pass an empty array to clear them."),
       },
     },
-    async ({ id, name, endDate, dailyBudgetAmount, dailyBudgetMode }) => {
+    async ({ id, name, endDate, dailyBudgetAmount, dailyBudgetMode, negativeKeywords }) => {
       try {
         const campaign = compact({
           Id: id,
@@ -180,6 +184,7 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
           DailyBudget: dailyBudgetAmount
             ? { Amount: toMicros(dailyBudgetAmount), Mode: dailyBudgetMode ?? "STANDARD" }
             : undefined,
+          NegativeKeywords: negativeKeywords !== undefined ? { Items: negativeKeywords } : undefined,
         });
         if (Object.keys(campaign).length === 1) {
           return fail("Provide at least one field to update.");
