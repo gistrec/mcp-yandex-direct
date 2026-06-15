@@ -2,7 +2,7 @@
   "mcpServers": {
     "yandex-direct": {
       "command": "npx",
-      "args": ["-y", "@gistrec/mcp-yandex-direct"],
+      "args": ["-y", "mcp-yandex-direct"],
       "env": {
         "YANDEX_DIRECT_TOKEN": "ваш_токен"
       }

@@ -1,6 +1,6 @@
 # Yandex Direct MCP
 
-[![npm](https://img.shields.io/npm/v/@gistrec/mcp-yandex-direct)](https://www.npmjs.com/package/@gistrec/mcp-yandex-direct)
+[![npm](https://img.shields.io/npm/v/mcp-yandex-direct)](https://www.npmjs.com/package/mcp-yandex-direct)
 [![CI](https://github.com/gistrec/mcp-yandex-direct/actions/workflows/ci.yml/badge.svg)](https://github.com/gistrec/mcp-yandex-direct/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
@@ -13,7 +13,7 @@ MCP-сервер для **Yandex Direct API v5**. Управляйте конт�
 **Claude Code** — одной командой:
 
 ```bash
-claude mcp add yandex-direct -e YANDEX_DIRECT_TOKEN=ваш_токен -- npx -y @gistrec/mcp-yandex-direct
+claude mcp add yandex-direct -e YANDEX_DIRECT_TOKEN=ваш_токен -- npx -y mcp-yandex-direct
 ```
 
 **Claude Desktop / Cursor / другой MCP-клиент** — добавьте в конфиг:
@@ -23,7 +23,7 @@ claude mcp add yandex-direct -e YANDEX_DIRECT_TOKEN=ваш_токен -- npx -y 
   "mcpServers": {
     "yandex-direct": {
       "command": "npx",
-      "args": ["-y", "@gistrec/mcp-yandex-direct"],
+      "args": ["-y", "mcp-yandex-direct"],
       "env": { "YANDEX_DIRECT_TOKEN": "ваш_токен" }
     }
   }
