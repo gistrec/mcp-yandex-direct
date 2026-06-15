@@ -30,6 +30,21 @@ claude mcp add yandex-direct -e YANDEX_DIRECT_TOKEN=ваш_токен -- npx -y 
 }
 ```
 
+**OpenAI Codex CLI** — командой или вручную в `~/.codex/config.toml`:
+
+```bash
+codex mcp add yandex-direct --env YANDEX_DIRECT_TOKEN=ваш_токен -- npx -y mcp-yandex-direct
+```
+
+```toml
+[mcp_servers.yandex-direct]
+command = "npx"
+args = ["-y", "mcp-yandex-direct"]
+
+[mcp_servers.yandex-direct.env]
+YANDEX_DIRECT_TOKEN = "ваш_токен"
+```
+
 ## Получение токена
 
 Откройте ссылку, **залогинившись под аккаунтом с доступом к нужному кабинету Яндекс Директа**, и подтвердите доступ — токен покажется на странице:
