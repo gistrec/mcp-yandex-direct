@@ -9,20 +9,27 @@ This is an original, from-scratch implementation released under the MIT license.
 | Tool | Description |
 | --- | --- |
 | `get_account_info` | Account details: login, currency, type, country. |
+| `get_quota` | Remaining daily API points (Units: spent / rest / limit). |
+| `get_regions` | Look up geo region ids by name (for `create_ad_group`). |
+| `get_dictionaries` | Reference dictionaries (currencies, time zones, constants, ...). |
 | `list_campaigns` | List campaigns with filters (id, type, state, status). |
 | `create_text_campaign` | Create a TextCampaign. |
+| `update_campaign` | Update name, end date or daily budget. |
 | `campaign_action` | suspend / resume / archive / unarchive / delete campaigns. |
 | `list_ad_groups` | List ad groups by campaign or id. |
 | `create_ad_group` | Create an ad group with target geo. |
+| `update_ad_group` | Update an ad group's name or target regions. |
 | `list_ads` | List ads with filters. |
 | `create_text_ad` | Create a text ad (starts as draft). |
+| `update_text_ad` | Update a text ad's title, text or URL. |
 | `ad_action` | moderate / suspend / resume / archive / unarchive / delete ads. |
 | `list_keywords` | List keywords by campaign, ad group or id. |
 | `add_keywords` | Add keywords with optional search/network bids. |
+| `set_keyword_bids` | Set manual bids on keywords, ad groups or campaigns. |
 | `keyword_action` | suspend / resume / delete keywords. |
 | `get_statistics` | TSV performance report via the Reports service. |
 
-Monetary inputs (budgets, bids) are given in account currency units and converted to micros automatically.
+Monetary values use account currency units in both directions: inputs (budgets, bids) are converted to micros automatically, and `list_*` output is converted back from micros. List tools accept `limit`/`offset` plus an `autoPaginate` flag that follows the `LimitedBy` cursor across all pages.
 
 ## Requirements
 
@@ -46,12 +53,31 @@ The server is configured through environment variables:
 | `YANDEX_DIRECT_LOGIN` | no | — | `Client-Login` header (agency accounts only). |
 | `YANDEX_DIRECT_LANG` | no | `ru` | `Accept-Language` for API responses (`ru`, `en`, `uk`, `tr`). |
 | `YANDEX_DIRECT_SANDBOX` | no | `false` | Set to `true` to target the API sandbox. |
+| `YANDEX_DIRECT_TIMEOUT_MS` | no | `60000` | Per-request timeout in milliseconds. |
+| `YANDEX_DIRECT_MAX_RETRIES` | no | `3` | Retries for transient errors (rate limits, 5xx). |
 
 > Tip: start with `YANDEX_DIRECT_SANDBOX=true` to experiment safely before touching live campaigns.
 
 ## Usage with an MCP client
 
-Copy `.mcp.json.example` to your client configuration (e.g. `.mcp.json`), set your token, and point `args` at the built entry point:
+Once published, run it with `npx` — no local build required:
+
+```json
+{
+  "mcpServers": {
+    "yandex-direct": {
+      "command": "npx",
+      "args": ["-y", "mcp-yandex-direct"],
+      "env": {
+        "YANDEX_DIRECT_TOKEN": "your-oauth-token",
+        "YANDEX_DIRECT_SANDBOX": "true"
+      }
+    }
+  }
+}
+```
+
+Or point `args` at a local build (copy `.mcp.json.example` to your client config and set your token):
 
 ```json
 {
@@ -71,9 +97,10 @@ Copy `.mcp.json.example` to your client configuration (e.g. `.mcp.json`), set yo
 ## Development
 
 ```bash
-npm run dev    # run from source with tsx watch
-npm test       # run unit tests
-npm run build  # type-check and emit dist/
+npm run dev        # run from source with tsx watch
+npm test           # run unit tests
+npm run typecheck  # type-check sources and tests (no emit)
+npm run build      # emit dist/ (excludes tests)
 ```
 
 ## License

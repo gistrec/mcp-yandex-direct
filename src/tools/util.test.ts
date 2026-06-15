@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import {
   DEFAULT_PAGE_LIMIT,
   buildPage,
@@ -10,8 +11,8 @@ import {
   toMicros,
 } from "./util.js";
 
-function textOf(result: { content: { type: string; text: string }[] }): string {
-  return result.content.map((c) => c.text).join("");
+function textOf(result: CallToolResult): string {
+  return result.content.map((c) => ("text" in c ? c.text : "")).join("");
 }
 
 test("okOrPartial reports success when every object has an Id", () => {
@@ -90,7 +91,7 @@ test("normalizeMoney converts nested DailyBudget.Amount and leaves null/non-mone
       { Id: 8, DailyBudget: null },
     ],
   });
-  assert.equal(result.Campaigns[0].DailyBudget.Amount, 1000);
+  assert.equal(result.Campaigns[0].DailyBudget?.Amount, 1000);
   assert.equal(result.Campaigns[0].Id, 7);
   assert.equal(result.Campaigns[1].DailyBudget, null);
 });
