@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { YandexDirectClient } from "./client.js";
+import { YandexDirectClient, parseUnits } from "./client.js";
 import { YandexDirectError } from "./types.js";
 
 function mockFetch(handler: (url: string, init: RequestInit) => Response) {
@@ -71,6 +71,29 @@ test("call() throws YandexDirectError on API error payload", async () => {
       () => client.call("clients", "get", {}),
       (err: unknown) => err instanceof YandexDirectError && err.code === 53,
     );
+  } finally {
+    mock.restore();
+  }
+});
+
+test("parseUnits parses the spent/rest/limit header and rejects junk", () => {
+  assert.deepEqual(parseUnits("10/4990/5000"), { spent: 10, rest: 4990, limit: 5000 });
+  assert.equal(parseUnits(null), undefined);
+  assert.equal(parseUnits("nope"), undefined);
+});
+
+test("call() captures the Units quota header", async () => {
+  const mock = mockFetch(
+    () =>
+      new Response(JSON.stringify({ result: {} }), {
+        status: 200,
+        headers: { Units: "3/100/200" },
+      }),
+  );
+  try {
+    const client = new YandexDirectClient({ token: "T", lang: "ru", sandbox: true });
+    await client.call("clients", "get", {});
+    assert.deepEqual(client.units, { spent: 3, rest: 100, limit: 200 });
   } finally {
     mock.restore();
   }

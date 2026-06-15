@@ -38,4 +38,23 @@ export function registerAccountTools(server: McpServer, client: YandexDirectClie
       }
     },
   );
+
+  server.registerTool(
+    "get_quota",
+    {
+      title: "Get API quota",
+      description:
+        "Returns today's API points quota (spent / rest / limit) from the Units header, so you can avoid hitting the daily limit.",
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        await client.call("clients", "get", { FieldNames: ["Login"] });
+        const units = client.units;
+        return ok(units ?? "Units quota was not reported by the API.");
+      } catch (e) {
+        return fail(e);
+      }
+    },
+  );
 }

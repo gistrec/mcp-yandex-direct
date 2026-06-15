@@ -14,17 +14,30 @@ export interface ReportOptions {
 /** API error codes that are transient and worth retrying: 52 = try again later, 506 = request rate exceeded. */
 const RETRYABLE_CODES = new Set([52, 506]);
 
+/** Daily API points quota from the Units response header. */
+export interface Units {
+  spent: number;
+  rest: number;
+  limit: number;
+}
+
 export class YandexDirectClient {
   private readonly base: string;
   private readonly timeoutMs: number;
   private readonly maxRetries: number;
   private readonly retryBaseMs: number;
+  private latestUnits?: Units;
 
   constructor(private readonly config: YandexDirectConfig) {
     this.base = config.sandbox ? SANDBOX_BASE : PROD_BASE;
     this.timeoutMs = config.timeoutMs ?? 60_000;
     this.maxRetries = config.maxRetries ?? 3;
     this.retryBaseMs = config.retryBaseMs ?? 500;
+  }
+
+  /** The most recent API points quota seen in a Units response header, if any. */
+  get units(): Units | undefined {
+    return this.latestUnits;
   }
 
   /** Backoff before a retry: honors Retry-After when present, else exponential (capped at 30s). */
@@ -76,6 +89,9 @@ export class YandexDirectClient {
         },
         service,
       );
+
+      const units = parseUnits(res.headers.get("Units"));
+      if (units) this.latestUnits = units;
 
       const text = await res.text();
 
@@ -201,6 +217,15 @@ export class YandexDirectClient {
 function pollDelayMs(res: Response): number {
   const retryIn = Number(res.headers.get("retryIn") ?? 5);
   return Math.min(Number.isFinite(retryIn) ? retryIn : 5, 10) * 1000;
+}
+
+/** Parses the "spent/rest/limit" Units header into structured quota numbers. */
+export function parseUnits(header: string | null): Units | undefined {
+  if (!header) return undefined;
+  const parts = header.split("/").map((n) => Number(n.trim()));
+  if (parts.length !== 3 || !parts.every(Number.isFinite)) return undefined;
+  const [spent, rest, limit] = parts;
+  return { spent, rest, limit };
 }
 
 function delay(ms: number): Promise<void> {
