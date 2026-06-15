@@ -98,9 +98,20 @@ Or point `args` at a local build (copy `.mcp.json.example` to your client config
 
 ```bash
 npm run dev        # run from source with tsx watch
-npm test           # run unit tests
+npm test           # run unit tests (no network)
 npm run typecheck  # type-check sources and tests (no emit)
 npm run build      # emit dist/ (excludes tests)
+```
+
+### Live smoke check
+
+`npm run smoke` runs a **read-only** check against the account in your environment
+(account info, quota, and the first few campaigns). It makes no writes. Run it
+locally with your own token — never put a production token in CI:
+
+```bash
+YANDEX_DIRECT_TOKEN=your-oauth-token npm run smoke
+# or YANDEX_DIRECT_SANDBOX=true YANDEX_DIRECT_TOKEN=... npm run smoke
 ```
 
 ## License
