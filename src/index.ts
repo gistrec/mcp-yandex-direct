@@ -13,6 +13,7 @@ import { registerDictionaryTools } from "./tools/dictionaries.js";
 import { registerRawTool } from "./tools/raw.js";
 import { registerBidModifierTools } from "./tools/bidModifiers.js";
 import { registerAssetTools } from "./tools/assets.js";
+import { registerMediaTools } from "./tools/media.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -33,6 +34,7 @@ async function main(): Promise<void> {
   registerRawTool(server, client);
   registerBidModifierTools(server, client);
   registerAssetTools(server, client);
+  registerMediaTools(server, client);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
