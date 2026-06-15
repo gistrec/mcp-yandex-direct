@@ -26,6 +26,17 @@ const DEFAULT_FIELDS = [
   "DailyBudget",
 ];
 
+/**
+ * Manual search bids with the network disabled. HIGHEST_POSITION is the
+ * manual-bid BiddingStrategyType (current in API v5, not a removed legacy
+ * value) and SERVING_OFF keeps a new campaign from spending on the network
+ * unexpectedly. Pass an explicit biddingStrategy to use an auto-strategy.
+ */
+const DEFAULT_BIDDING_STRATEGY = {
+  Search: { BiddingStrategyType: "HIGHEST_POSITION" },
+  Network: { BiddingStrategyType: "SERVING_OFF" },
+};
+
 export function registerCampaignTools(server: McpServer, client: YandexDirectClient): void {
   server.registerTool(
     "list_campaigns",
@@ -71,7 +82,7 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
     {
       title: "Create text campaign",
       description:
-        "Creates a TextCampaign (search + network). Provide a custom biddingStrategy for production; the default suits the sandbox.",
+        "Creates a TextCampaign (Text & Image ads). Without biddingStrategy it defaults to manual search bids with the network off (Search HIGHEST_POSITION, Network SERVING_OFF); pass a full biddingStrategy {Search, Network} to use an auto-strategy or enable the network.",
       inputSchema: {
         name: z.string().min(1).describe("Campaign name."),
         startDate: z.string().describe("Start date, format YYYY-MM-DD."),
@@ -90,6 +101,9 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
     },
     async ({ name, startDate, endDate, dailyBudgetAmount, dailyBudgetMode, biddingStrategy }) => {
       try {
+        if (biddingStrategy && (!biddingStrategy.Search || !biddingStrategy.Network)) {
+          return fail("biddingStrategy must include both Search and Network strategy objects.");
+        }
         const campaign = compact({
           Name: name,
           StartDate: startDate,
@@ -98,10 +112,7 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
             ? { Amount: toMicros(dailyBudgetAmount), Mode: dailyBudgetMode ?? "STANDARD" }
             : undefined,
           TextCampaign: {
-            BiddingStrategy: biddingStrategy ?? {
-              Search: { BiddingStrategyType: "HIGHEST_POSITION" },
-              Network: { BiddingStrategyType: "SERVING_OFF" },
-            },
+            BiddingStrategy: biddingStrategy ?? DEFAULT_BIDDING_STRATEGY,
           },
         });
         const result = await client.call("campaigns", "add", { Campaigns: [campaign] });
