@@ -1,6 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_PAGE_LIMIT, buildPage, isoDate, normalizeMoney, okOrPartial, toMicros } from "./util.js";
+import {
+  DEFAULT_PAGE_LIMIT,
+  buildPage,
+  compact,
+  isoDate,
+  normalizeMoney,
+  okOrPartial,
+  toMicros,
+} from "./util.js";
 
 function textOf(result: { content: { type: string; text: string }[] }): string {
   return result.content.map((c) => c.text).join("");
@@ -38,6 +46,15 @@ test("okOrPartial flags an all-failed action response", () => {
 test("okOrPartial ignores arrays that are not *Results", () => {
   const result = okOrPartial({ Campaigns: [{ Id: 1, Errors: [{ Message: "x" }] }] });
   assert.equal(result.isError, undefined);
+});
+
+test("compact drops only undefined values, keeping null/0/empty", () => {
+  assert.deepEqual(compact({ a: 1, b: undefined, c: null, d: 0, e: "" }), {
+    a: 1,
+    c: null,
+    d: 0,
+    e: "",
+  });
 });
 
 test("isoDate accepts YYYY-MM-DD and rejects other formats", () => {
