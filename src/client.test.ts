@@ -92,6 +92,23 @@ test("report() returns TSV body on HTTP 200", async () => {
   }
 });
 
+test("call() aborts and reports a timeout when the request hangs", async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = ((_url: unknown, init: unknown) =>
+    new Promise((_resolve, reject) => {
+      const signal = (init as RequestInit).signal as AbortSignal;
+      signal.addEventListener("abort", () =>
+        reject(Object.assign(new Error("aborted"), { name: "AbortError" })),
+      );
+    })) as typeof fetch;
+  try {
+    const client = new YandexDirectClient({ token: "T", lang: "ru", sandbox: true, timeoutMs: 10 });
+    await assert.rejects(() => client.call("campaigns", "get", {}), /timed out after 10ms/);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
 test("report() retries a transient 5xx and then returns the body", async () => {
   const tsv = "Date\tClicks\n2026-01-01\t1\n";
   let calls = 0;

@@ -3,6 +3,8 @@ export interface YandexDirectConfig {
   login?: string;
   lang: string;
   sandbox: boolean;
+  /** Per-request timeout in milliseconds. Defaults to 60_000. */
+  timeoutMs?: number;
 }
 
 export interface ApiError {

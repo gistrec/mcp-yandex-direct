@@ -12,9 +12,27 @@ export interface ReportOptions {
 
 export class YandexDirectClient {
   private readonly base: string;
+  private readonly timeoutMs: number;
 
   constructor(private readonly config: YandexDirectConfig) {
     this.base = config.sandbox ? SANDBOX_BASE : PROD_BASE;
+    this.timeoutMs = config.timeoutMs ?? 60_000;
+  }
+
+  /** fetch with an AbortController timeout so a hung connection can't hang the tool forever. */
+  private async fetchWithTimeout(url: string, init: RequestInit, service: string): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        throw new Error(`Request to "${service}" timed out after ${this.timeoutMs}ms`);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   private headers(extra?: Record<string, string>): Record<string, string> {
@@ -33,11 +51,15 @@ export class YandexDirectClient {
     method: string,
     params: Record<string, unknown>,
   ): Promise<T> {
-    const res = await fetch(this.base + service, {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify({ method, params }),
-    });
+    const res = await this.fetchWithTimeout(
+      this.base + service,
+      {
+        method: "POST",
+        headers: this.headers(),
+        body: JSON.stringify({ method, params }),
+      },
+      service,
+    );
 
     const text = await res.text();
     let data: { result?: T; error?: ApiError };
@@ -66,11 +88,15 @@ export class YandexDirectClient {
     let lastStatus = 0;
 
     for (let attempt = 0; attempt < maxPolls; attempt++) {
-      const res = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ params }),
-      });
+      const res = await this.fetchWithTimeout(
+        url,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ params }),
+        },
+        "reports",
+      );
       lastStatus = res.status;
 
       if (res.status === 200) return res.text();
