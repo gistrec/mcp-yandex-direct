@@ -56,3 +56,28 @@ test("delete_sitelinks passes ids in SelectionCriteria", async () => {
   await tools.delete_sitelinks({ ids: [7] });
   assert.deepEqual(calls[0].params, { SelectionCriteria: { Ids: [7] } });
 });
+
+test("get_callouts targets adextensions with the CALLOUT type and CalloutFieldNames", async () => {
+  const { calls, tools } = harness();
+  await tools.get_callouts({});
+  assert.equal(calls[0].service, "adextensions");
+  assert.deepEqual(calls[0].params.SelectionCriteria, { Types: ["CALLOUT"] });
+  assert.deepEqual(calls[0].params.CalloutFieldNames, ["CalloutText"]);
+});
+
+test("add_callouts wraps each text in a Callout extension", async () => {
+  const { calls, tools } = harness();
+  const res = await tools.add_callouts({ texts: ["Доставка 24/7", "Гарантия"] });
+  assert.equal(res.isError, undefined);
+  assert.equal(calls[0].method, "add");
+  assert.deepEqual(calls[0].params.AdExtensions, [
+    { Callout: { CalloutText: "Доставка 24/7" } },
+    { Callout: { CalloutText: "Гарантия" } },
+  ]);
+});
+
+test("delete_callouts passes ids in SelectionCriteria", async () => {
+  const { calls, tools } = harness();
+  await tools.delete_callouts({ ids: [11] });
+  assert.deepEqual(calls[0].params, { SelectionCriteria: { Ids: [11] } });
+});

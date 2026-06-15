@@ -86,4 +86,78 @@ export function registerAssetTools(server: McpServer, client: YandexDirectClient
       }
     },
   );
+
+  server.registerTool(
+    "get_callouts",
+    {
+      title: "Get callouts",
+      description:
+        "Lists callouts (уточнения) from the adextensions library. Attach a callout to an ad via the Ads service.",
+      inputSchema: {
+        ids: z.array(z.number().int()).optional().describe("Filter by callout ids."),
+        limit: z.number().int().min(1).max(10000).optional().describe("Max objects per page."),
+        offset: z.number().int().min(0).optional().describe("Pagination offset."),
+      },
+    },
+    async ({ ids, limit, offset }) => {
+      try {
+        const params: Record<string, unknown> = {
+          SelectionCriteria: compact({ Ids: ids?.length ? ids : undefined, Types: ["CALLOUT"] }),
+          FieldNames: ["Id", "Type", "Status", "StatusClarification", "Associated"],
+          CalloutFieldNames: ["CalloutText"],
+        };
+        const page = buildPage(limit, offset);
+        if (page) params.Page = page;
+        const result = await client.call("adextensions", "get", params);
+        return ok(result);
+      } catch (e) {
+        return fail(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    "add_callouts",
+    {
+      title: "Add callouts",
+      description:
+        "Creates callouts (уточнения), up to 25 characters each. Callouts are immutable — delete and recreate to change. Assign to ads via the Ads service.",
+      inputSchema: {
+        texts: z
+          .array(z.string().min(1).max(25))
+          .min(1)
+          .describe("Callout texts, up to 25 characters each."),
+      },
+    },
+    async ({ texts }) => {
+      try {
+        const adExtensions = texts.map((text) => ({ Callout: { CalloutText: text } }));
+        const result = await client.call("adextensions", "add", { AdExtensions: adExtensions });
+        return okOrPartial(result);
+      } catch (e) {
+        return fail(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    "delete_callouts",
+    {
+      title: "Delete callouts",
+      description: "Deletes callouts by id (adextensions/delete).",
+      inputSchema: {
+        ids: z.array(z.number().int()).min(1).describe("Callout ids to delete."),
+      },
+    },
+    async ({ ids }) => {
+      try {
+        const result = await client.call("adextensions", "delete", {
+          SelectionCriteria: { Ids: ids },
+        });
+        return okOrPartial(result);
+      } catch (e) {
+        return fail(e);
+      }
+    },
+  );
 }
