@@ -18,7 +18,7 @@ function textOf(result: CallToolResult): string {
 test("okOrPartial reports success when every object has an Id", () => {
   const result = okOrPartial({ AddResults: [{ Id: 1 }, { Id: 2 }] });
   assert.equal(result.isError, undefined);
-  assert.match(textOf(result), /"Id": 1/);
+  assert.match(textOf(result), /"Id":1/);
 });
 
 test("okOrPartial flags a partial failure as an error", () => {
@@ -33,7 +33,7 @@ test("okOrPartial flags a partial failure as an error", () => {
   assert.match(text, /1 of 2 object\(s\) failed/);
   assert.match(text, /\[5006\] Object not found: AdGroupId 1/);
   // the full payload is still included for context
-  assert.match(text, /"Id": 1/);
+  assert.match(text, /"Id":1/);
 });
 
 test("okOrPartial flags an all-failed action response", () => {

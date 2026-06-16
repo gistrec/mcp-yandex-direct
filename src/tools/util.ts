@@ -8,7 +8,8 @@ export const isoDate = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Must be a date in YYYY-MM-DD format");
 
 export function ok(data: unknown): CallToolResult {
-  const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+  // Compact JSON (no indent): the consumer is an LLM, pretty-printing only burns tokens.
+  const text = typeof data === "string" ? data : JSON.stringify(data);
   return { content: [{ type: "text", text }] };
 }
 
@@ -54,7 +55,7 @@ function collectObjectErrors(result: unknown): { failed: number; total: number; 
  */
 export function okOrPartial(result: unknown): CallToolResult {
   const { failed, total, messages } = collectObjectErrors(result);
-  const body = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+  const body = typeof result === "string" ? result : JSON.stringify(result);
   if (failed === 0) return { content: [{ type: "text", text: body }] };
   const header =
     failed === total

@@ -88,7 +88,7 @@ test("list_campaigns sends only provided filters and normalizes money on output"
   const res = await tools.list_campaigns({ states: ["ON"], limit: 5 });
   assert.deepEqual(calls[0].params.SelectionCriteria, { States: ["ON"] });
   assert.deepEqual(calls[0].params.Page, { Limit: 5, Offset: 0 });
-  assert.match(res.content[0].text, /"Amount": 1000/);
+  assert.match(res.content[0].text, /"Amount":1000/);
 });
 
 test("list_campaigns autoPaginate routes through getAll", async () => {
