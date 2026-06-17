@@ -127,7 +127,7 @@ test("getAll merges pages by following LimitedBy and clears it when done", async
   }
 });
 
-test("getAll stops at maxPages and keeps LimitedBy as a 'more remains' signal", async () => {
+test("getAll stops at maxPages and flags the truncation loudly", async () => {
   let calls = 0;
   const mock = mockFetch(() => {
     calls++;
@@ -138,13 +138,17 @@ test("getAll stops at maxPages and keeps LimitedBy as a 'more remains' signal", 
   });
   try {
     const client = new YandexDirectClient({ token: "T", lang: "ru", sandbox: true });
-    const result = await client.getAll<{ Campaigns: unknown[]; LimitedBy?: number }>(
-      "campaigns",
-      {},
-      2,
-    );
+    const result = await client.getAll<{
+      Campaigns: unknown[];
+      LimitedBy?: number;
+      _truncated?: boolean;
+      _truncatedNote?: string;
+    }>("campaigns", {}, 2);
     assert.equal(calls, 2);
     assert.equal(result.Campaigns.length, 2);
+    // Hitting the cap is explicit, not a bare LimitedBy that the model may ignore.
+    assert.equal(result._truncated, true);
+    assert.match(result._truncatedNote ?? "", /more objects remain/);
     assert.notEqual(result.LimitedBy, undefined);
   } finally {
     mock.restore();

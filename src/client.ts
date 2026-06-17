@@ -129,8 +129,13 @@ export class YandexDirectClient {
   /**
    * Runs a `get` request, following the LimitedBy cursor to fetch every page
    * and merging the entity array, so large accounts are not silently truncated.
-   * Bounded by maxPages; if the cap is hit, LimitedBy is kept as a "more remains"
-   * signal.
+   * Pages at DEFAULT_PAGE_LIMIT (10k) regardless of the per-tool `limit` clamp
+   * (which governs single-page calls only), so capacity is a DETERMINISTIC
+   * DEFAULT_PAGE_LIMIT × maxPages ≈ 1M objects — not path-dependent. maxPages is a
+   * safety stop for runaway loops, not a cost lever (context size is bounded
+   * downstream by the backend's per-result cap). If the cap IS hit, the merged
+   * result is flagged with `_truncated`/`_truncatedNote` and keeps LimitedBy, so a
+   * truncated full-export is explicit and never silent data loss.
    */
   async getAll<T = unknown>(
     service: string,
@@ -138,7 +143,12 @@ export class YandexDirectClient {
     maxPages = 100,
   ): Promise<T> {
     const basePage = (params.Page as Record<string, unknown> | undefined) ?? {};
-    const limit = Number(basePage.Limit ?? DEFAULT_PAGE_LIMIT);
+    // autoPaginate ("fetch all") ALWAYS pages at the API max, independent of the
+    // per-tool `limit` clamp (which governs single-page calls only). This keeps
+    // capacity deterministic — DEFAULT_PAGE_LIMIT × maxPages ≈ 1M — instead of
+    // path-dependent (a caller passing limit:1000 alongside autoPaginate must not
+    // silently shrink the export ceiling to 100k).
+    const limit = DEFAULT_PAGE_LIMIT;
     let offset = Number(basePage.Offset ?? 0);
     let merged: Record<string, unknown> | undefined;
     let entityKey: string | undefined;
@@ -160,6 +170,17 @@ export class YandexDirectClient {
         return merged as T;
       }
       offset = limitedBy;
+    }
+    // Reached the page cap with LimitedBy still set → more objects remain. Make this
+    // LOUD: a bare LimitedBy number is easy for an LLM consumer to miss, and a silently
+    // truncated full-export is legitimate-data loss (the backend's char-cap only flags
+    // size, not pagination cutoff).
+    if (merged && typeof (merged as Record<string, unknown>).LimitedBy === "number") {
+      const m = merged as Record<string, unknown>;
+      m._truncated = true;
+      m._truncatedNote =
+        `Stopped at the ${maxPages}-page cap; more objects remain (LimitedBy=${m.LimitedBy}). ` +
+        "Narrow the filter or paginate manually with offset to get the rest.";
     }
     return merged as T;
   }

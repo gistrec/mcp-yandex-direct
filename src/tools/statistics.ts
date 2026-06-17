@@ -32,21 +32,26 @@ const METRICS = ["Impressions", "Clicks", "Cost", "Ctr", "AvgCpc"];
  * dimension fields — e.g. ACCOUNT_PERFORMANCE_REPORT rejects CampaignName — so
  * a single shared default cannot work. All sets below are verified against the
  * live Reports service.
+ *
+ * `Date` is intentionally OMITTED from the defaults: in the Reports service Date
+ * is a grouping dimension, so including it splits the report by day (one row per
+ * object × day → up to ×30 rows on LAST_30_DAYS). The default is a period-
+ * aggregate (one row per object); a caller asking about daily dynamics/trends
+ * adds "Date" to fieldNames explicitly.
  */
 export const DEFAULT_FIELDS_BY_TYPE: Record<ReportType, string[]> = {
-  ACCOUNT_PERFORMANCE_REPORT: ["Date", ...METRICS],
-  CAMPAIGN_PERFORMANCE_REPORT: ["Date", "CampaignId", "CampaignName", ...METRICS],
-  ADGROUP_PERFORMANCE_REPORT: ["Date", "CampaignName", "AdGroupId", "AdGroupName", ...METRICS],
-  AD_PERFORMANCE_REPORT: ["Date", "CampaignName", "AdGroupName", "AdId", ...METRICS],
+  ACCOUNT_PERFORMANCE_REPORT: [...METRICS],
+  CAMPAIGN_PERFORMANCE_REPORT: ["CampaignId", "CampaignName", ...METRICS],
+  ADGROUP_PERFORMANCE_REPORT: ["CampaignName", "AdGroupId", "AdGroupName", ...METRICS],
+  AD_PERFORMANCE_REPORT: ["CampaignName", "AdGroupName", "AdId", ...METRICS],
   CRITERIA_PERFORMANCE_REPORT: [
-    "Date",
     "CampaignName",
     "AdGroupName",
     "CriterionId",
     "Criterion",
     ...METRICS,
   ],
-  SEARCH_QUERY_PERFORMANCE_REPORT: ["Date", "CampaignName", "Query", ...METRICS],
+  SEARCH_QUERY_PERFORMANCE_REPORT: ["CampaignName", "Query", ...METRICS],
 };
 
 export function registerStatisticsTools(server: McpServer, client: YandexDirectClient): void {
@@ -55,7 +60,7 @@ export function registerStatisticsTools(server: McpServer, client: YandexDirectC
     {
       title: "Get statistics",
       description:
-        "Requests a TSV performance report via the Yandex Direct Reports service. Returns the report as tab-separated text with a column header row.",
+        "Requests a TSV performance report via the Yandex Direct Reports service. Returns tab-separated rows (no header row). By default the report is AGGREGATED over the whole period (one row per object) — add \"Date\" to fieldNames only for day-by-day dynamics or trend questions. ALL_TIME without a campaign filter is rejected for SEARCH_QUERY/CRITERIA reports; pass campaignIds or a bounded date range.",
       inputSchema: {
         reportType: z.enum(REPORT_TYPES).optional().describe("Report type. Default CAMPAIGN_PERFORMANCE_REPORT."),
         dateRangeType: z
@@ -73,6 +78,16 @@ export function registerStatisticsTools(server: McpServer, client: YandexDirectC
       try {
         const type = reportType ?? "CAMPAIGN_PERFORMANCE_REPORT";
         const range = dateRangeType ?? (dateFrom && dateTo ? "CUSTOM_DATE" : "LAST_30_DAYS");
+
+        // L3: ALL_TIME без фильтра по кампании для построчных «тяжёлых» отчётов тянет
+        // весь аккаунт за всё время → взрыв размера. Падаем громко, до запроса.
+        const heavy =
+          type === "SEARCH_QUERY_PERFORMANCE_REPORT" || type === "CRITERIA_PERFORMANCE_REPORT";
+        if (range === "ALL_TIME" && heavy && !campaignIds?.length) {
+          return fail(
+            `ALL_TIME without a campaign filter is not allowed for ${type} (it returns the whole account and explodes in size). Pass campaignIds, or a bounded date range like LAST_30_DAYS or CUSTOM_DATE.`,
+          );
+        }
 
         const selection: Record<string, unknown> = {};
         if (range === "CUSTOM_DATE") {
@@ -100,6 +115,14 @@ export function registerStatisticsTools(server: McpServer, client: YandexDirectC
         };
 
         const tsv = await client.report(params);
+        // L3 fail-loud: явный фильтр по кампании, но 0 строк — почти всегда неверный
+        // campaignId или период. Пустой ответ провоцирует модель «снять фильтр и
+        // расширить охват»; явная ошибка заставляет починить фильтр.
+        if (campaignIds?.length && tsv.trim() === "") {
+          return fail(
+            `Report returned 0 rows for campaignIds [${campaignIds.join(", ")}] over ${range}. Check the campaignId(s) and the date range — do not broaden the filter blindly.`,
+          );
+        }
         return ok(tsv);
       } catch (e) {
         return fail(e);

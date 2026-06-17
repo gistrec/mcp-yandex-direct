@@ -72,6 +72,35 @@ test("get_statistics errors on CUSTOM_DATE without both dates and makes no reque
   assert.equal(reports.length, 0);
 });
 
+test("ALL_TIME without a campaign filter is rejected for SEARCH_QUERY (no request)", async () => {
+  const { reports, tools } = harness(registerStatisticsTools, { reportResult: "TSV" });
+  const res = await tools.get_statistics({
+    reportType: "SEARCH_QUERY_PERFORMANCE_REPORT",
+    dateRangeType: "ALL_TIME",
+  });
+  assert.equal(res.isError, true);
+  assert.equal(reports.length, 0);
+});
+
+test("ALL_TIME is allowed for SEARCH_QUERY when a campaign filter is present", async () => {
+  const { reports, tools } = harness(registerStatisticsTools, { reportResult: "TSV" });
+  const res = await tools.get_statistics({
+    reportType: "SEARCH_QUERY_PERFORMANCE_REPORT",
+    dateRangeType: "ALL_TIME",
+    campaignIds: [1],
+  });
+  assert.ok(!res.isError);
+  assert.equal(reports.length, 1);
+});
+
+test("explicit campaign filter with 0 rows fails loud (L3)", async () => {
+  const { reports, tools } = harness(registerStatisticsTools, { reportResult: "" });
+  const res = await tools.get_statistics({ campaignIds: [123], dateRangeType: "LAST_7_DAYS" });
+  assert.equal(res.isError, true);
+  assert.equal(reports.length, 1); // запрос сделан; ошибка — по факту 0 строк
+  assert.match(res.content[0].text, /0 rows/);
+});
+
 test("create_text_campaign applies the default strategy and converts the budget", async () => {
   const { calls, tools } = harness(registerCampaignTools, { callResult: { AddResults: [{ Id: 1 }] } });
   await tools.create_text_campaign({ name: "C", startDate: "2026-01-01", dailyBudgetAmount: 500 });

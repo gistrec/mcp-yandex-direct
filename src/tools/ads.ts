@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { buildPage, compact, fail, ok, okOrPartial } from "./util.js";
+import { buildPage, compact, fail, MAX_TOOL_LIMIT, ok, okOrPartial } from "./util.js";
 
 const AD_STATES = ["ON", "OFF", "SUSPENDED", "OFF_BY_MONITORING", "ARCHIVED"] as const;
 const AD_STATUSES = ["ACCEPTED", "DRAFT", "MODERATION", "PREACCEPTED", "REJECTED"] as const;
@@ -21,7 +21,7 @@ export function registerAdTools(server: McpServer, client: YandexDirectClient): 
         states: z.array(z.enum(AD_STATES)).optional().describe("Filter by ad states."),
         statuses: z.array(z.enum(AD_STATUSES)).optional().describe("Filter by moderation statuses."),
         fieldNames: z.array(z.string()).optional().describe("Ad fields to return."),
-        limit: z.number().int().min(1).max(10000).optional().describe("Max objects per page."),
+        limit: z.number().int().min(1).max(MAX_TOOL_LIMIT).optional().describe("Max objects per page."),
         offset: z.number().int().min(0).optional().describe("Pagination offset (objects to skip)."),
         autoPaginate: z
           .boolean()

@@ -112,6 +112,14 @@ export function normalizeMoney<T>(value: T, fields: Set<string> = MONEY_FIELDS):
 export const DEFAULT_PAGE_LIMIT = 10000;
 
 /**
+ * Cap on the `limit` a list_* tool exposes to the caller. The API allows up to
+ * 10000/page, but a single 10k-row result blows up the LLM context, so the tools
+ * advertise a much smaller ceiling. autoPaginate (multi-page) is bounded
+ * separately by getAll's maxPages.
+ */
+export const MAX_TOOL_LIMIT = 1000;
+
+/**
  * Builds a Page object for a get request. The API requires Limit whenever Page
  * is present, so Limit defaults to DEFAULT_PAGE_LIMIT when only an offset is given.
  * Returns undefined when neither limit nor offset is requested.

@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { buildPage, compact, fail, isoDate, normalizeMoney, ok, okOrPartial, toMicros } from "./util.js";
+import { buildPage, compact, fail, isoDate, MAX_TOOL_LIMIT, normalizeMoney, ok, okOrPartial, toMicros } from "./util.js";
 
 const CAMPAIGN_TYPES = [
   "TEXT_CAMPAIGN",
@@ -53,7 +53,7 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
           .optional()
           .describe("Filter by moderation statuses."),
         fieldNames: z.array(z.string()).optional().describe("Campaign fields to return."),
-        limit: z.number().int().min(1).max(10000).optional().describe("Max objects per page."),
+        limit: z.number().int().min(1).max(MAX_TOOL_LIMIT).optional().describe("Max objects per page."),
         offset: z.number().int().min(0).optional().describe("Pagination offset (objects to skip)."),
         autoPaginate: z
           .boolean()

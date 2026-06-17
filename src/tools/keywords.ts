@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { buildPage, compact, fail, normalizeMoney, ok, okOrPartial, toMicros } from "./util.js";
+import { buildPage, compact, fail, MAX_TOOL_LIMIT, normalizeMoney, ok, okOrPartial, toMicros } from "./util.js";
 
 const DEFAULT_FIELDS = ["Id", "Keyword", "AdGroupId", "CampaignId", "Bid", "ContextBid", "State", "Status"];
 
@@ -17,7 +17,7 @@ export function registerKeywordTools(server: McpServer, client: YandexDirectClie
         adGroupIds: z.array(z.number().int()).optional().describe("Filter by ad group ids."),
         ids: z.array(z.number().int()).optional().describe("Filter by keyword ids."),
         fieldNames: z.array(z.string()).optional().describe("Keyword fields to return."),
-        limit: z.number().int().min(1).max(10000).optional().describe("Max objects per page."),
+        limit: z.number().int().min(1).max(MAX_TOOL_LIMIT).optional().describe("Max objects per page."),
         offset: z.number().int().min(0).optional().describe("Pagination offset (objects to skip)."),
         autoPaginate: z
           .boolean()
