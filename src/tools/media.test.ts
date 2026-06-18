@@ -45,3 +45,24 @@ test("get_creatives reads creatives with an empty selection by default", async (
   assert.equal(calls[0].service, "creatives");
   assert.deepEqual(calls[0].params.SelectionCriteria, {});
 });
+
+test("upload_ad_image sends base64 to adimages/add", async () => {
+  const { calls, tools } = harness();
+  await tools.upload_ad_image({ name: "Cover", imageData: "QUJD" });
+  assert.equal(calls[0].service, "adimages");
+  assert.equal(calls[0].method, "add");
+  assert.deepEqual(calls[0].params.AdImages[0], { Name: "Cover", ImageData: "QUJD" });
+});
+
+test("upload_ad_image strips a data: URL prefix from imageData", async () => {
+  const { calls, tools } = harness();
+  await tools.upload_ad_image({ name: "Cover", imageData: "data:image/png;base64,QUJD" });
+  assert.equal(calls[0].params.AdImages[0].ImageData, "QUJD");
+});
+
+test("upload_ad_image rejects when neither url nor imageData is given", async () => {
+  const { calls, tools } = harness();
+  const res = await tools.upload_ad_image({ name: "Cover" });
+  assert.equal(res.isError, true);
+  assert.equal(calls.length, 0);
+});
