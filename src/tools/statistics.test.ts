@@ -102,3 +102,34 @@ test("aggregate: zeroClicksOnly filter", () => {
   assert.equal(a.filtered?.rows, 1);
   assert.equal(a.top[0].Query, "мусор");
 });
+
+// ---- column-header stripping (the live Reports TSV keeps the header row) ----
+
+test("aggregate: leading column-header row is dropped, not counted as data", () => {
+  // The live Reports service returns the column header as the first TSV line.
+  const withHeader = [SQ_FIELDS.join("\t"), SQ_TSV].join("\n");
+  const a = aggregateReport(withHeader, SQ_FIELDS, "SEARCH_QUERY_PERFORMANCE_REPORT");
+  // Identical to the headerless fixture — the header must not become a phantom row.
+  assert.equal(a.rowsTotal, 4);
+  assert.equal(a.counts.zeroClick, 1); // not 2 — header is not a zero-click row
+  assert.equal(a.totals.Cost, 277);
+  assert.ok(!a.top.some((r) => r.Query === "Query"), "header must not leak into top rows");
+});
+
+test("aggregate: empty slice (header-only TSV) → 0 rows with an explicit empty note", () => {
+  // No traffic in the slice → the report body is just the column header.
+  const a = aggregateReport(SQ_FIELDS.join("\t"), SQ_FIELDS, "SEARCH_QUERY_PERFORMANCE_REPORT");
+  assert.equal(a.rowsTotal, 0);
+  assert.equal(a.totals.Cost, 0);
+  assert.equal(a.top.length, 0);
+  assert.match(a.note, /0 rows for this slice/);
+  assert.match(a.note, /not that the report is unavailable/);
+});
+
+test("aggregate: a real query literally equal to a field name is not mistaken for a header", () => {
+  // First data line whose first cell is "Query" but other cells are numbers — not a header.
+  const tsv = ["Query\t10\t2\t5.00\t0", "whisper\t50\t10\t90.00\t8"].join("\n");
+  const a = aggregateReport(tsv, SQ_FIELDS, "SEARCH_QUERY_PERFORMANCE_REPORT");
+  assert.equal(a.rowsTotal, 2);
+  assert.equal(a.totals.Clicks, 12);
+});

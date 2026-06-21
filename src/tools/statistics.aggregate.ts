@@ -87,12 +87,25 @@ interface ParsedRow {
   m: Record<string, number>;
 }
 
-/** Splits a (headerless) TSV body into rows keyed positionally by fieldNames. */
+/** Splits a TSV body into rows keyed positionally by fieldNames, dropping the column header. */
 export function parseRows(tsv: string, fieldNames: string[]): ParsedRow[] {
   const rows: ParsedRow[] = [];
+  let sawHeader = false;
   for (const line of tsv.split("\n")) {
     if (!line.trim()) continue;
     const cells = line.split("\t");
+    // The Reports service keeps the column-header row in the TSV body — we strip
+    // only the report header/summary via request headers, NOT skipColumnHeader.
+    // Drop a leading line whose cells equal the requested fieldNames; otherwise it
+    // parses as a phantom all-zero row (Query="Query", …) that inflates rowsTotal/
+    // zeroClick by 1 and, on an empty slice, becomes the ONLY "row" → the model reads
+    // "1 row, all zeros" and invents reasons instead of reporting an empty slice.
+    if (!sawHeader) {
+      sawHeader = true;
+      if (cells.length === fieldNames.length && fieldNames.every((f, i) => cells[i] === f)) {
+        continue;
+      }
+    }
     const dims: Record<string, string> = {};
     const m: Record<string, number> = {};
     fieldNames.forEach((f, i) => {
@@ -223,9 +236,14 @@ export function aggregateReport(
     tail,
     ...(anomalies.length ? { anomalies } : {}),
     note:
-      `totals are over all ${rows.length} row(s) (the full period, not a sample); ` +
-      `top lists ${top.length} row(s) by ${sortBy} ${order}` +
-      (filtered ? ` from ${detail.length} filtered row(s)` : "") +
-      "; tail rolls up the rest.",
+      rows.length === 0
+        ? "0 rows for this slice — the report ran fine but there is no search-query data " +
+          "for this campaign/period. This means the slice is EMPTY, not that the report is " +
+          "unavailable or access-restricted. Report it as empty and suggest checking the " +
+          "campaign id / date range; do not invent causes (campaign type, autotargeting, rights)."
+        : `totals are over all ${rows.length} row(s) (the full period, not a sample); ` +
+          `top lists ${top.length} row(s) by ${sortBy} ${order}` +
+          (filtered ? ` from ${detail.length} filtered row(s)` : "") +
+          "; tail rolls up the rest.",
   };
 }
