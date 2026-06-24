@@ -140,3 +140,33 @@ export function compact<T extends Record<string, unknown>>(obj: T): T {
     Object.entries(obj).filter(([, v]) => v !== undefined),
   ) as T;
 }
+
+/**
+ * MCP tool annotations — hints the consuming client can use to gate or label a
+ * tool (e.g. auto-approve reads, warn before writes). Every tool here talks to
+ * the remote Yandex Direct API, so openWorldHint is always true.
+ *
+ *   READ_ONLY    — get/list tools; never mutate the account.
+ *   WRITE_CREATE — add/create/upload tools; introduce new objects.
+ *   WRITE_UPDATE — update/set tools; re-applying the same input is idempotent.
+ *   WRITE_DELETE — delete and lifecycle *_action tools; can remove or archive objects.
+ */
+export const READ_ONLY = { readOnlyHint: true, openWorldHint: true } as const;
+export const WRITE_CREATE = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: true,
+} as const;
+export const WRITE_UPDATE = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
+export const WRITE_DELETE = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: false,
+  openWorldHint: true,
+} as const;

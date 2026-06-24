@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { buildPage, compact, fail, MAX_TOOL_LIMIT, ok, okOrPartial } from "./util.js";
+import { buildPage, compact, fail, MAX_TOOL_LIMIT, ok, okOrPartial, READ_ONLY, WRITE_CREATE, WRITE_DELETE, WRITE_UPDATE } from "./util.js";
 
 const AD_STATES = ["ON", "OFF", "SUSPENDED", "OFF_BY_MONITORING", "ARCHIVED"] as const;
 const AD_STATUSES = ["ACCEPTED", "DRAFT", "MODERATION", "PREACCEPTED", "REJECTED"] as const;
@@ -13,6 +13,7 @@ export function registerAdTools(server: McpServer, client: YandexDirectClient): 
     "list_ads",
     {
       title: "List ads",
+      annotations: READ_ONLY,
       description: "Lists ads with optional filtering by campaign, ad group, id, state and status.",
       inputSchema: {
         campaignIds: z.array(z.number().int()).optional().describe("Filter by campaign ids."),
@@ -58,6 +59,7 @@ export function registerAdTools(server: McpServer, client: YandexDirectClient): 
     "create_text_ad",
     {
       title: "Create text ad",
+      annotations: WRITE_CREATE,
       description: "Creates a text ad (TextAd) inside an ad group. New ads start as drafts.",
       inputSchema: {
         adGroupId: z.number().int().describe("Parent ad group id."),
@@ -90,6 +92,7 @@ export function registerAdTools(server: McpServer, client: YandexDirectClient): 
     "ad_action",
     {
       title: "Ad action",
+      annotations: WRITE_DELETE,
       description:
         "Performs a lifecycle action on ads by id: moderate, suspend, resume, archive, unarchive or delete.",
       inputSchema: {
@@ -111,6 +114,7 @@ export function registerAdTools(server: McpServer, client: YandexDirectClient): 
     "update_text_ad",
     {
       title: "Update text ad",
+      annotations: WRITE_UPDATE,
       description:
         "Updates a text ad's title, text or landing page (ads/update). Editing an active ad sends it back to moderation.",
       inputSchema: {

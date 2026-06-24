@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { fail, ok } from "./util.js";
+import { fail, ok, READ_ONLY } from "./util.js";
 
 const DEFAULT_FIELDS = [
   "Login",
@@ -18,6 +18,7 @@ export function registerAccountTools(server: McpServer, client: YandexDirectClie
     "get_account_info",
     {
       title: "Get account info",
+      annotations: READ_ONLY,
       description:
         "Returns information about the current advertiser account (login, currency, type, country) using the Yandex Direct `clients` service.",
       inputSchema: {
@@ -43,6 +44,7 @@ export function registerAccountTools(server: McpServer, client: YandexDirectClie
     "get_quota",
     {
       title: "Get API quota",
+      annotations: READ_ONLY,
       description:
         "Returns today's API points quota (spent / rest / limit) from the Units header, so you can avoid hitting the daily limit.",
       inputSchema: {},

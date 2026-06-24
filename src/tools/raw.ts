@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { fail, okOrPartial } from "./util.js";
+import { fail, okOrPartial, WRITE_DELETE } from "./util.js";
 
 /** Methods that only read data and never mutate the account. */
 export function isReadMethod(method: string): boolean {
@@ -13,6 +13,8 @@ export function registerRawTool(server: McpServer, client: YandexDirectClient): 
     "raw_request",
     {
       title: "Raw Yandex Direct API call",
+      // Escape hatch: can perform any method including deletes, so flag it destructive.
+      annotations: WRITE_DELETE,
       description:
         'Escape hatch to call any Yandex Direct API v5 service/method directly (e.g. service "bidmodifiers", method "get"). Use this for services that have no dedicated tool. Money is in micros (no conversion). Read methods (get/has/check) run freely; any other method is a write and requires confirmWrite=true.',
       inputSchema: {

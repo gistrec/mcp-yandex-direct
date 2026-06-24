@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { buildPage, compact, fail, MAX_TOOL_LIMIT, ok, okOrPartial } from "./util.js";
+import { buildPage, compact, fail, MAX_TOOL_LIMIT, ok, okOrPartial, READ_ONLY, WRITE_CREATE, WRITE_DELETE, WRITE_UPDATE } from "./util.js";
 
 const DEFAULT_FIELDS = ["Id", "Name", "CampaignId", "RegionIds", "Status", "Type"];
 
@@ -10,6 +10,7 @@ export function registerAdGroupTools(server: McpServer, client: YandexDirectClie
     "list_ad_groups",
     {
       title: "List ad groups",
+      annotations: READ_ONLY,
       description:
         "Lists ad groups. Provide campaignIds and/or ids — the Yandex Direct API requires at least one selection criterion.",
       inputSchema: {
@@ -50,6 +51,7 @@ export function registerAdGroupTools(server: McpServer, client: YandexDirectClie
     "create_ad_group",
     {
       title: "Create ad group",
+      annotations: WRITE_CREATE,
       description: "Creates an ad group inside a campaign with a target geo.",
       inputSchema: {
         name: z.string().min(1).describe("Ad group name."),
@@ -75,6 +77,7 @@ export function registerAdGroupTools(server: McpServer, client: YandexDirectClie
     "update_ad_group",
     {
       title: "Update ad group",
+      annotations: WRITE_UPDATE,
       description: "Updates an ad group's name and/or target regions (adgroups/update).",
       inputSchema: {
         id: z.number().int().describe("Ad group id to update."),
@@ -102,6 +105,27 @@ export function registerAdGroupTools(server: McpServer, client: YandexDirectClie
           return fail("Provide at least one field to update.");
         }
         const result = await client.call("adgroups", "update", { AdGroups: [adGroup] });
+        return okOrPartial(result);
+      } catch (e) {
+        return fail(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    "delete_ad_groups",
+    {
+      title: "Delete ad groups",
+      annotations: WRITE_DELETE,
+      description:
+        "Deletes ad groups by id (adgroups/delete). Deleting a group also removes its ads and keywords; this cannot be undone.",
+      inputSchema: {
+        ids: z.array(z.number().int()).min(1).describe("Ad group ids to delete."),
+      },
+    },
+    async ({ ids }) => {
+      try {
+        const result = await client.call("adgroups", "delete", { SelectionCriteria: { Ids: ids } });
         return okOrPartial(result);
       } catch (e) {
         return fail(e);

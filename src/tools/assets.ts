@@ -1,13 +1,14 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { buildPage, compact, fail, ok, okOrPartial } from "./util.js";
+import { buildPage, compact, fail, ok, okOrPartial, READ_ONLY, WRITE_CREATE, WRITE_DELETE } from "./util.js";
 
 export function registerAssetTools(server: McpServer, client: YandexDirectClient): void {
   server.registerTool(
     "get_sitelinks",
     {
       title: "Get sitelink sets",
+      annotations: READ_ONLY,
       description:
         "Reads sitelink sets (быстрые ссылки) by id. The API requires set ids — get them from ads' SitelinkSetId.",
       inputSchema: {
@@ -37,6 +38,7 @@ export function registerAssetTools(server: McpServer, client: YandexDirectClient
     "create_sitelinks_set",
     {
       title: "Create sitelink set",
+      annotations: WRITE_CREATE,
       description:
         "Creates a sitelink set (1–8 links). Sets are immutable — to change links, create a new set and reassign it to the ad.",
       inputSchema: {
@@ -72,6 +74,7 @@ export function registerAssetTools(server: McpServer, client: YandexDirectClient
     "delete_sitelinks",
     {
       title: "Delete sitelink sets",
+      annotations: WRITE_DELETE,
       description: "Deletes sitelink sets by id (only sets not assigned to any ad can be deleted).",
       inputSchema: {
         ids: z.array(z.number().int()).min(1).describe("Sitelink set ids to delete."),
@@ -91,6 +94,7 @@ export function registerAssetTools(server: McpServer, client: YandexDirectClient
     "get_callouts",
     {
       title: "Get callouts",
+      annotations: READ_ONLY,
       description:
         "Lists callouts (уточнения) from the adextensions library. Attach a callout to an ad via the Ads service.",
       inputSchema: {
@@ -120,6 +124,7 @@ export function registerAssetTools(server: McpServer, client: YandexDirectClient
     "add_callouts",
     {
       title: "Add callouts",
+      annotations: WRITE_CREATE,
       description:
         "Creates callouts (уточнения), up to 25 characters each. Callouts are immutable — delete and recreate to change. Assign to ads via the Ads service.",
       inputSchema: {
@@ -144,6 +149,7 @@ export function registerAssetTools(server: McpServer, client: YandexDirectClient
     "delete_callouts",
     {
       title: "Delete callouts",
+      annotations: WRITE_DELETE,
       description: "Deletes callouts by id (adextensions/delete).",
       inputSchema: {
         ids: z.array(z.number().int()).min(1).describe("Callout ids to delete."),
@@ -165,6 +171,7 @@ export function registerAssetTools(server: McpServer, client: YandexDirectClient
     "get_vcards",
     {
       title: "Get vCards",
+      annotations: READ_ONLY,
       description: "Reads virtual business cards (визитки) by id. The API requires ids — get them from ads' VCardId.",
       inputSchema: {
         ids: z.array(z.number().int()).min(1).describe("vCard ids (required by the API)."),
@@ -210,6 +217,7 @@ export function registerAssetTools(server: McpServer, client: YandexDirectClient
     "create_vcard",
     {
       title: "Create vCard",
+      annotations: WRITE_CREATE,
       description:
         "Creates a virtual business card in a campaign. vCards are immutable — delete and recreate to change.",
       inputSchema: {
@@ -274,6 +282,7 @@ export function registerAssetTools(server: McpServer, client: YandexDirectClient
     "delete_vcards",
     {
       title: "Delete vCards",
+      annotations: WRITE_DELETE,
       description: "Deletes vCards by id (vcards/delete).",
       inputSchema: {
         ids: z.array(z.number().int()).min(1).describe("vCard ids to delete."),

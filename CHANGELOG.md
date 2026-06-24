@@ -5,6 +5,13 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [Unreleased]
+
+### Добавлено
+- MCP-аннотации (`readOnlyHint` / `destructiveHint` / `idempotentHint` / `openWorldHint`)
+  на всех тулах — клиент MCP может авто-подтверждать чтение и предупреждать перед записью.
+- Тул `delete_ad_groups` — удаление групп объявлений по id (`adgroups/delete`).
+
 ## [1.0.7] — 2026-06-23
 
 ### Исправлено
@@ -58,6 +65,7 @@
   `LimitedBy`), ретраи транзиентных ошибок, квота из заголовка `Units`, валидация дат и
   длин текстов.
 
+[Unreleased]: https://github.com/gistrec/mcp-yandex-direct/compare/v1.0.7...HEAD
 [1.0.7]: https://github.com/gistrec/mcp-yandex-direct/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/gistrec/mcp-yandex-direct/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/gistrec/mcp-yandex-direct/compare/v1.0.4...v1.0.5

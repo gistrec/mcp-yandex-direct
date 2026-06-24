@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { buildPage, compact, fail, MAX_TOOL_LIMIT, normalizeMoney, ok, okOrPartial, toMicros } from "./util.js";
+import { buildPage, compact, fail, MAX_TOOL_LIMIT, normalizeMoney, ok, okOrPartial, READ_ONLY, toMicros, WRITE_CREATE, WRITE_DELETE, WRITE_UPDATE } from "./util.js";
 
 const DEFAULT_FIELDS = ["Id", "Keyword", "AdGroupId", "CampaignId", "Bid", "ContextBid", "State", "Status"];
 
@@ -10,6 +10,7 @@ export function registerKeywordTools(server: McpServer, client: YandexDirectClie
     "list_keywords",
     {
       title: "List keywords",
+      annotations: READ_ONLY,
       description:
         "Lists keywords filtered by campaign, ad group or id. Bid and ContextBid are returned in account currency units.",
       inputSchema: {
@@ -52,6 +53,7 @@ export function registerKeywordTools(server: McpServer, client: YandexDirectClie
     "add_keywords",
     {
       title: "Add keywords",
+      annotations: WRITE_CREATE,
       description: "Adds keywords to an ad group, with optional search and network bids.",
       inputSchema: {
         adGroupId: z.number().int().describe("Target ad group id."),
@@ -89,6 +91,7 @@ export function registerKeywordTools(server: McpServer, client: YandexDirectClie
     "keyword_action",
     {
       title: "Keyword action",
+      annotations: WRITE_DELETE,
       description: "Performs a lifecycle action on keywords by id: suspend, resume or delete.",
       inputSchema: {
         action: z.enum(["suspend", "resume", "delete"]),
@@ -109,6 +112,7 @@ export function registerKeywordTools(server: McpServer, client: YandexDirectClie
     "set_keyword_bids",
     {
       title: "Set keyword bids",
+      annotations: WRITE_UPDATE,
       description:
         "Sets manual search/network bids on keywords, or on all keywords in given ad groups or campaigns (keywordbids/set). Bids are in account currency units.",
       inputSchema: {

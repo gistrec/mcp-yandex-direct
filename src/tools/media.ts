@@ -1,13 +1,14 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { buildPage, fail, ok, okOrPartial } from "./util.js";
+import { buildPage, fail, ok, okOrPartial, READ_ONLY, WRITE_CREATE } from "./util.js";
 
 export function registerMediaTools(server: McpServer, client: YandexDirectClient): void {
   server.registerTool(
     "get_ad_images",
     {
       title: "Get ad images",
+      annotations: READ_ONLY,
       description: "Lists images in the ad image library, keyed by image hash. Upload new images with upload_ad_image.",
       inputSchema: {
         hashes: z.array(z.string()).optional().describe("Filter by image hashes."),
@@ -35,6 +36,7 @@ export function registerMediaTools(server: McpServer, client: YandexDirectClient
     "get_ad_videos",
     {
       title: "Get ad videos",
+      annotations: READ_ONLY,
       description:
         "Reads videos from the ad video library by id (the API requires ids). Uploads go via raw_request (advideos/add).",
       inputSchema: {
@@ -63,6 +65,7 @@ export function registerMediaTools(server: McpServer, client: YandexDirectClient
     "get_creatives",
     {
       title: "Get creatives",
+      annotations: READ_ONLY,
       description: "Lists creatives (smart banners, HTML5) from the creative library.",
       inputSchema: {
         ids: z.array(z.number().int()).optional().describe("Filter by creative ids."),
@@ -90,6 +93,7 @@ export function registerMediaTools(server: McpServer, client: YandexDirectClient
     "upload_ad_image",
     {
       title: "Upload ad image",
+      annotations: WRITE_CREATE,
       description:
         "Uploads an image to the ad image library (adimages/add) and returns its AdImageHash — use that hash as AdImageHash on a text & image ad. Provide the image as a public URL (fetched and encoded server-side) or as base64 in imageData. Yandex accepts JPG/PNG/GIF up to 10 MB; a text & image ad needs a landscape image (min 1080×607).",
       inputSchema: {

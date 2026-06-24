@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { fail, isoDate, ok } from "./util.js";
+import { fail, isoDate, ok, READ_ONLY } from "./util.js";
 import { aggregateReport, MAX_TOP_N } from "./statistics.aggregate.js";
 
 export const REPORT_TYPES = [
@@ -60,6 +60,7 @@ export function registerStatisticsTools(server: McpServer, client: YandexDirectC
     "get_statistics",
     {
       title: "Get statistics",
+      annotations: READ_ONLY,
       description:
         "Requests a performance report via the Yandex Direct Reports service. By default the report is AGGREGATED over the whole period (one row per object) — add \"Date\" to fieldNames only for day-by-day dynamics or trend questions. ALL_TIME without a campaign filter is rejected for SEARCH_QUERY/CRITERIA reports; pass campaignIds or a bounded date range. SEARCH_QUERY_PERFORMANCE_REPORT returns a COMPUTED SUMMARY (totals over ALL rows + top-N detail + tail rollup + zero-click/zero-conversion counts), not raw rows — shape it with sortBy/topN/minCost/queryContains/zeroClicksOnly/zeroConversionsOnly, and add Conversions to fieldNames for conversion-based counts. Other report types return tab-separated rows (no header).",
       inputSchema: {

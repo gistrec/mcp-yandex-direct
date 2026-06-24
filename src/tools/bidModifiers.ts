@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { compact, fail, ok, okOrPartial } from "./util.js";
+import { compact, fail, ok, okOrPartial, READ_ONLY, WRITE_CREATE, WRITE_DELETE, WRITE_UPDATE } from "./util.js";
 
 const BID_MODIFIER_TYPES = [
   "MOBILE_ADJUSTMENT",
@@ -23,6 +23,7 @@ export function registerBidModifierTools(server: McpServer, client: YandexDirect
     "get_bid_modifiers",
     {
       title: "Get bid modifiers",
+      annotations: READ_ONLY,
       description:
         "Reads bid adjustments (mobile, desktop, demographics, retargeting, regional, video) for campaigns or ad groups. BidModifier is a percentage, not money.",
       inputSchema: {
@@ -72,6 +73,7 @@ export function registerBidModifierTools(server: McpServer, client: YandexDirect
     "add_bid_modifier",
     {
       title: "Add bid modifier",
+      annotations: WRITE_CREATE,
       description:
         "Adds a bid adjustment to a campaign or ad group. BidModifier values are percentages per the API (e.g. 0–1300), not money.",
       inputSchema: {
@@ -154,6 +156,7 @@ export function registerBidModifierTools(server: McpServer, client: YandexDirect
     "set_bid_modifiers",
     {
       title: "Set bid modifiers",
+      annotations: WRITE_UPDATE,
       description:
         "Changes the percent of existing bid modifiers and/or enables/disables them (bidmodifiers/set), by modifier id.",
       inputSchema: {
@@ -195,6 +198,7 @@ export function registerBidModifierTools(server: McpServer, client: YandexDirect
     "delete_bid_modifiers",
     {
       title: "Delete bid modifiers",
+      annotations: WRITE_DELETE,
       description: "Deletes bid modifiers by id (bidmodifiers/delete).",
       inputSchema: {
         ids: z.array(z.number().int()).min(1).describe("Bid modifier ids to delete."),

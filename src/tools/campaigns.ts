@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { buildPage, compact, fail, isoDate, MAX_TOOL_LIMIT, normalizeMoney, ok, okOrPartial, toMicros } from "./util.js";
+import { buildPage, compact, fail, isoDate, MAX_TOOL_LIMIT, normalizeMoney, ok, okOrPartial, READ_ONLY, toMicros, WRITE_CREATE, WRITE_DELETE, WRITE_UPDATE } from "./util.js";
 
 const CAMPAIGN_TYPES = [
   "TEXT_CAMPAIGN",
@@ -42,6 +42,7 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
     "list_campaigns",
     {
       title: "List campaigns",
+      annotations: READ_ONLY,
       description:
         "Lists campaigns with optional filtering by id, type, state and status. Monetary fields (e.g. DailyBudget.Amount) are returned in account currency units.",
       inputSchema: {
@@ -89,6 +90,7 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
     "create_text_campaign",
     {
       title: "Create text campaign",
+      annotations: WRITE_CREATE,
       description:
         "Creates a TextCampaign (Text & Image ads). Without biddingStrategy it defaults to manual search bids with the network off (Search HIGHEST_POSITION, Network SERVING_OFF); pass a full biddingStrategy {Search, Network} to use an auto-strategy or enable the network.",
       inputSchema: {
@@ -135,6 +137,7 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
     "campaign_action",
     {
       title: "Campaign action",
+      annotations: WRITE_DELETE,
       description:
         "Performs a lifecycle action on campaigns by id: suspend, resume, archive, unarchive or delete.",
       inputSchema: {
@@ -158,6 +161,7 @@ export function registerCampaignTools(server: McpServer, client: YandexDirectCli
     "update_campaign",
     {
       title: "Update campaign",
+      annotations: WRITE_UPDATE,
       description: "Updates a campaign's name, end date and/or daily budget (campaigns/update).",
       inputSchema: {
         id: z.number().int().describe("Campaign id to update."),

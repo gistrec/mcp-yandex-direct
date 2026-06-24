@@ -118,3 +118,12 @@ test("update_text_ad rejects an empty update", async () => {
   assert.equal(res.isError, true);
   assert.equal(calls.length, 0);
 });
+
+test("delete_ad_groups calls adgroups/delete with the ids", async () => {
+  const { calls, tools } = harness(registerAdGroupTools);
+  const res = await tools.delete_ad_groups({ ids: [9, 10] });
+  assert.equal(res.isError, undefined);
+  assert.equal(calls[0].service, "adgroups");
+  assert.equal(calls[0].method, "delete");
+  assert.deepEqual(calls[0].params, { SelectionCriteria: { Ids: [9, 10] } });
+});

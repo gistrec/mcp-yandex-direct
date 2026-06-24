@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
-import { fail, ok } from "./util.js";
+import { fail, ok, READ_ONLY } from "./util.js";
 
 const DICTIONARY_NAMES = [
   "GeoRegions",
@@ -39,6 +39,7 @@ export function registerDictionaryTools(server: McpServer, client: YandexDirectC
     "get_regions",
     {
       title: "Get geo regions",
+      annotations: READ_ONLY,
       description:
         "Looks up geo region ids for targeting (the regionIds that create_ad_group needs). Filter by a name substring; results are capped by limit.",
       inputSchema: {
@@ -66,6 +67,7 @@ export function registerDictionaryTools(server: McpServer, client: YandexDirectC
     "get_dictionaries",
     {
       title: "Get dictionaries",
+      annotations: READ_ONLY,
       description:
         "Returns Yandex Direct reference dictionaries (currencies, time zones, constants, ad categories, ...). GeoRegions can be very large — prefer get_regions for region lookups.",
       inputSchema: {
