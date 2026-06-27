@@ -5,6 +5,13 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [1.1.1] — 2026-06-27
+
+### Изменено
+- Репозиторий переехал в организацию `askads`: обновлены ссылки (`repository`/`homepage`/
+  `bugs`, README, `server.json`) и MCP-namespace (`io.github.askads/mcp-yandex-direct`).
+  Код пакета не изменился.
+
 ## [1.1.0] — 2026-06-24
 
 ### Добавлено
@@ -72,6 +79,7 @@
   `LimitedBy`), ретраи транзиентных ошибок, квота из заголовка `Units`, валидация дат и
   длин текстов.
 
+[1.1.1]: https://github.com/askads/mcp-yandex-direct/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/askads/mcp-yandex-direct/compare/v1.0.7...v1.1.0
 [1.0.7]: https://github.com/askads/mcp-yandex-direct/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/askads/mcp-yandex-direct/compare/v1.0.5...v1.0.6
