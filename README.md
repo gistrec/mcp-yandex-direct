@@ -1,7 +1,7 @@
 # Yandex Direct MCP
 
 [![npm](https://img.shields.io/npm/v/mcp-yandex-direct)](https://www.npmjs.com/package/mcp-yandex-direct)
-[![CI](https://github.com/gistrec/mcp-yandex-direct/actions/workflows/ci.yml/badge.svg)](https://github.com/gistrec/mcp-yandex-direct/actions/workflows/ci.yml)
+[![CI](https://github.com/askads/mcp-yandex-direct/actions/workflows/ci.yml/badge.svg)](https://github.com/askads/mcp-yandex-direct/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 MCP-сервер для **Yandex Direct API v5**: управляйте контекстной рекламой из Claude, Cursor, Codex и других AI-клиентов на естественном языке.
@@ -158,7 +158,7 @@ YANDEX_DIRECT_TOKEN = "ваш_токен"
 | `YANDEX_DIRECT_LOGIN` | нет | Логин клиента (для агентских аккаунтов). |
 | `YANDEX_DIRECT_SANDBOX` | нет | `true` — работать в песочнице API. |
 
-Полный список переменных (язык ответов, таймауты, повторы) и инструментов — в [docs/TOOLS.md](https://github.com/gistrec/mcp-yandex-direct/blob/main/docs/TOOLS.md).
+Полный список переменных (язык ответов, таймауты, повторы) и инструментов — в [docs/TOOLS.md](https://github.com/askads/mcp-yandex-direct/blob/main/docs/TOOLS.md).
 
 ## Требования
 
@@ -173,8 +173,8 @@ YANDEX_DIRECT_TOKEN = "ваш_токен"
 
 ## Документация
 
-- [Все инструменты](https://github.com/gistrec/mcp-yandex-direct/blob/main/docs/TOOLS.md) — полный список с описанием.
-- [Разработка](https://github.com/gistrec/mcp-yandex-direct/blob/main/docs/DEVELOPMENT.md) — сборка, тесты, smoke-проверка.
+- [Все инструменты](https://github.com/askads/mcp-yandex-direct/blob/main/docs/TOOLS.md) — полный список с описанием.
+- [Разработка](https://github.com/askads/mcp-yandex-direct/blob/main/docs/DEVELOPMENT.md) — сборка, тесты, smoke-проверка.
 
 ## Поддержка
 

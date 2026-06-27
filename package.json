@@ -2,7 +2,7 @@
   "name": "mcp-yandex-direct",
   "version": "1.1.0",
   "description": "MCP server for the Yandex Direct API v5 — manage PPC campaigns, ad groups, ads, keywords and pull statistics from AI agents.",
-  "mcpName": "io.github.gistrec/mcp-yandex-direct",
+  "mcpName": "io.github.askads/mcp-yandex-direct",
   "type": "module",
   "bin": {
     "mcp-yandex-direct": "dist/index.js"
@@ -36,11 +36,11 @@
   "author": "Aleksandr Kovalko",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gistrec/mcp-yandex-direct.git"
+    "url": "git+https://github.com/askads/mcp-yandex-direct.git"
   },
-  "homepage": "https://github.com/gistrec/mcp-yandex-direct#readme",
+  "homepage": "https://github.com/askads/mcp-yandex-direct#readme",
   "bugs": {
-    "url": "https://github.com/gistrec/mcp-yandex-direct/issues"
+    "url": "https://github.com/askads/mcp-yandex-direct/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

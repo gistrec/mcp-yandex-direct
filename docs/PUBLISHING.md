@@ -9,13 +9,13 @@ GitHub-репозитория, поэтому начинаем с реестра
 ## 1. Официальный реестр MCP
 
 Манифест уже лежит в корне репозитория — [`server.json`](../server.json)
-(схема `2025-12-11`, имя namespace `io.github.gistrec/mcp-yandex-direct`).
+(схема `2025-12-11`, имя namespace `io.github.askads/mcp-yandex-direct`).
 
 ### Что проверяет реестр
 
-- **Namespace** — имя `io.github.gistrec/*` подтверждается логином под GitHub-аккаунтом `gistrec`.
+- **Namespace** — имя `io.github.askads/*` подтверждается входом под GitHub-аккаунтом с доступом к организации `askads`.
 - **Владение npm-пакетом** — в `package.json` опубликованного пакета должно быть поле
-  `mcpName` со значением `io.github.gistrec/mcp-yandex-direct` (оно уже добавлено).
+  `mcpName` со значением `io.github.askads/mcp-yandex-direct` (оно уже добавлено).
   Реестр сверяет его с `name` из `server.json`.
 
 > ⚠️ Поле `mcpName` появилось после версии, которая сейчас в npm. Перед публикацией в
@@ -48,11 +48,11 @@ mcp-publisher publish
 
 ## 2. LobeHub
 
-LobeHub индексирует репозиторий как `gistrec-mcp-yandex-direct`.
+LobeHub индексирует репозиторий как `askads-mcp-yandex-direct`.
 
 1. Открыть [lobehub.com/mcp](https://lobehub.com/mcp).
 2. Нажать **«Submit MCP»** (Community → MCP в левом меню).
-3. Указать URL репозитория `https://github.com/gistrec/mcp-yandex-direct`.
+3. Указать URL репозитория `https://github.com/askads/mcp-yandex-direct`.
    LobeHub сам подтянет README, список инструментов и конфиг установки (`npx -y mcp-yandex-direct`).
 
 Для корректной карточки в README/`server.json` уже есть: описание, переменные окружения,
