@@ -41,6 +41,34 @@ export function registerAccountTools(server: McpServer, client: YandexDirectClie
   );
 
   server.registerTool(
+    "get_balance",
+    {
+      title: "Get account balance",
+      annotations: READ_ONLY,
+      description:
+        "Returns the shared-account balance and finance fields (Amount, AmountAvailableForTransfer, Currency, Discount, AccountID) via the legacy Live v4 AccountManagement service — the only Yandex Direct API that exposes balance (v5 has no finance method). Amount is a string in account CURRENCY UNITS (not micros); a negative Amount means the account is in debt. Defaults to the token's own account; pass logins to target specific shared accounts.",
+      inputSchema: {
+        logins: z
+          .array(z.string())
+          .optional()
+          .describe("Account logins to fetch. Defaults to the token's own account."),
+      },
+    },
+    async ({ logins }) => {
+      try {
+        // Money in Live v4 is already in currency units — do NOT normalizeMoney it.
+        const result = await client.callV4("AccountManagement", {
+          Action: "Get",
+          SelectionCriteria: logins?.length ? { Logins: logins } : {},
+        });
+        return ok(result);
+      } catch (e) {
+        return fail(e);
+      }
+    },
+  );
+
+  server.registerTool(
     "get_quota",
     {
       title: "Get API quota",

@@ -20,6 +20,52 @@ function mockFetch(handler: (url: string, init: RequestInit) => Response) {
   };
 }
 
+test("callV4() targets Live v4, puts OAuth token in body, returns data", async () => {
+  const mock = mockFetch(
+    () => new Response(JSON.stringify({ data: { Accounts: [{ Amount: "15" }] } }), { status: 200 }),
+  );
+  try {
+    const client = new YandexDirectClient({ token: "T", lang: "ru", sandbox: false });
+    const result = await client.callV4("AccountManagement", { Action: "Get", SelectionCriteria: {} });
+
+    assert.deepEqual(result, { Accounts: [{ Amount: "15" }] });
+    assert.match(mock.calls[0].url, /api\.direct\.yandex\.ru\/live\/v4\/json/);
+
+    const body = JSON.parse(mock.calls[0].init.body as string);
+    assert.equal(body.method, "AccountManagement");
+    assert.equal(body.token, "T");
+    assert.equal(body.param.Action, "Get");
+    // v4 auth is in the body, never the Authorization header.
+    const headers = (mock.calls[0].init.headers ?? {}) as Record<string, string>;
+    assert.equal(headers.Authorization, undefined);
+  } finally {
+    mock.restore();
+  }
+});
+
+test("callV4() throws on a v4 error_code payload", async () => {
+  const mock = mockFetch(
+    () => new Response(JSON.stringify({ error_code: 53, error_str: "Invalid token" }), { status: 200 }),
+  );
+  try {
+    const client = new YandexDirectClient({ token: "T", lang: "ru", sandbox: false });
+    await assert.rejects(() => client.callV4("AccountManagement", {}), /\[53\].*Invalid token/);
+  } finally {
+    mock.restore();
+  }
+});
+
+test("callV4() targets the sandbox v4 base in sandbox mode", async () => {
+  const mock = mockFetch(() => new Response(JSON.stringify({ data: {} }), { status: 200 }));
+  try {
+    const client = new YandexDirectClient({ token: "T", lang: "ru", sandbox: true });
+    await client.callV4("AccountManagement", {});
+    assert.match(mock.calls[0].url, /api-sandbox\.direct\.yandex\.ru\/live\/v4/);
+  } finally {
+    mock.restore();
+  }
+});
+
 test("call() targets sandbox, sends bearer token and parses result", async () => {
   const mock = mockFetch(
     () => new Response(JSON.stringify({ result: { Campaigns: [] } }), { status: 200 }),

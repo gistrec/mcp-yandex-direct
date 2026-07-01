@@ -3,6 +3,11 @@ import { z } from "zod";
 import type { YandexDirectClient } from "../client.js";
 import { buildPage, compact, fail, isoDate, MAX_TOOL_LIMIT, normalizeMoney, ok, okOrPartial, READ_ONLY, toMicros, WRITE_CREATE, WRITE_DELETE, WRITE_UPDATE } from "./util.js";
 
+// Types accepted by campaigns.get SelectionCriteria.Types. UNIFIED_CAMPAIGN is the
+// "Единая перформанс-кампания" (ЕПК) — the type new performance campaigns are created as.
+// Yandex is consolidating the legacy types into it, so without UNIFIED_CAMPAIGN a
+// type-filtered query silently omits every performance campaign. Legacy types are kept:
+// existing (not-yet-migrated) campaigns still report them and remain filterable.
 const CAMPAIGN_TYPES = [
   "TEXT_CAMPAIGN",
   "MOBILE_APP_CAMPAIGN",
@@ -10,6 +15,7 @@ const CAMPAIGN_TYPES = [
   "CPM_BANNER_CAMPAIGN",
   "SMART_CAMPAIGN",
   "MCBANNER_CAMPAIGN",
+  "UNIFIED_CAMPAIGN",
 ] as const;
 
 const CAMPAIGN_STATES = ["ON", "OFF", "SUSPENDED", "ENDED", "CONVERTED", "ARCHIVED"] as const;

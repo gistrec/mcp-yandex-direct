@@ -58,7 +58,7 @@ test("every tool declares annotations", () => {
 
 test("read tools are read-only", () => {
   const readTools = [
-    "get_account_info", "get_quota", "list_campaigns", "list_ad_groups", "list_ads",
+    "get_account_info", "get_balance", "get_quota", "list_campaigns", "list_ad_groups", "list_ads",
     "list_keywords", "get_statistics", "get_regions", "get_dictionaries",
     "get_bid_modifiers", "get_sitelinks", "get_callouts", "get_vcards",
     "get_ad_images", "get_ad_videos", "get_creatives",

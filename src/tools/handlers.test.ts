@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { registerAccountTools } from "./account.js";
 import { registerStatisticsTools } from "./statistics.js";
 import { registerCampaignTools } from "./campaigns.js";
 import { registerKeywordTools } from "./keywords.js";
@@ -28,6 +29,10 @@ function harness(
       reports.push({ params });
       return opts.reportResult ?? "";
     },
+    callV4: async (method: string, param: any) => {
+      calls.push({ service: "live/v4", method, params: param });
+      return opts.callResult ?? {};
+    },
   };
   const server = {
     registerTool: (name: string, _cfg: unknown, handler: Handler) => {
@@ -37,6 +42,25 @@ function harness(
   register(server, client);
   return { calls, reports, tools };
 }
+
+test("get_balance calls Live v4 AccountManagement Get, own account by default", async () => {
+  const { calls, tools } = harness(registerAccountTools, {
+    callResult: { Accounts: [{ Login: "askads-demo", Amount: "15", Currency: "USD" }] },
+  });
+  const res = await tools.get_balance({});
+  assert.equal(calls[0].service, "live/v4");
+  assert.equal(calls[0].method, "AccountManagement");
+  assert.equal(calls[0].params.Action, "Get");
+  assert.deepEqual(calls[0].params.SelectionCriteria, {});
+  assert.equal(res.isError ?? false, false);
+  assert.ok(res.content[0].text.includes("15"));
+});
+
+test("get_balance forwards logins into SelectionCriteria", async () => {
+  const { calls, tools } = harness(registerAccountTools, { callResult: {} });
+  await tools.get_balance({ logins: ["askads-demo"] });
+  assert.deepEqual(calls[0].params.SelectionCriteria, { Logins: ["askads-demo"] });
+});
 
 test("get_statistics infers CUSTOM_DATE from dates and builds a campaign filter", async () => {
   const { reports, tools } = harness(registerStatisticsTools, { reportResult: "TSV" });

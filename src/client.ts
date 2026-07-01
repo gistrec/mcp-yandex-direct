@@ -5,6 +5,12 @@ import { DEFAULT_PAGE_LIMIT } from "./tools/util.js";
 const PROD_BASE = "https://api.direct.yandex.com/json/v5/";
 const SANDBOX_BASE = "https://api-sandbox.direct.yandex.com/json/v5/";
 
+// Legacy Live v4 API — a DIFFERENT host/path and request shape than v5. Kept only for
+// finance data: AccountManagement (the sole method exposing the shared-account balance)
+// lives only here; v5 has no finance service.
+const PROD_V4_BASE = "https://api.direct.yandex.ru/live/v4/json/";
+const SANDBOX_V4_BASE = "https://api-sandbox.direct.yandex.ru/live/v4/json/";
+
 export interface ReportOptions {
   processingMode?: "auto" | "online" | "offline";
   returnMoneyInMicros?: boolean;
@@ -23,6 +29,7 @@ export interface Units {
 
 export class YandexDirectClient {
   private readonly base: string;
+  private readonly v4Base: string;
   private readonly timeoutMs: number;
   private readonly maxRetries: number;
   private readonly retryBaseMs: number;
@@ -30,6 +37,7 @@ export class YandexDirectClient {
 
   constructor(private readonly config: YandexDirectConfig) {
     this.base = config.sandbox ? SANDBOX_BASE : PROD_BASE;
+    this.v4Base = config.sandbox ? SANDBOX_V4_BASE : PROD_V4_BASE;
     this.timeoutMs = config.timeoutMs ?? 60_000;
     this.maxRetries = config.maxRetries ?? 3;
     this.retryBaseMs = config.retryBaseMs ?? 500;
@@ -132,6 +140,46 @@ export class YandexDirectClient {
       }
       return data.result as T;
     }
+  }
+
+  /**
+   * Calls the legacy Live v4 API (different base URL AND request shape than v5): the
+   * OAuth token goes in the JSON body, not the Authorization header, and the result is
+   * under `data` (errors under `error_code`/`error_str`). Used only for finance reads
+   * (AccountManagement) that v5 does not expose. Money in v4 is already in currency units
+   * (not micros) — callers must NOT run normalizeMoney on it.
+   */
+  async callV4<T = unknown>(method: string, param: Record<string, unknown>): Promise<T> {
+    const res = await this.fetchWithTimeout(
+      this.v4Base,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ method, token: this.config.token, locale: this.config.lang, param }),
+      },
+      method,
+    );
+
+    const text = await res.text();
+    let data: { data?: T; error_code?: number; error_str?: string; error_detail?: string };
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      throw new Error(
+        `Invalid JSON from Live v4 "${method}" (HTTP ${res.status}): ${text.slice(0, 500)}`,
+      );
+    }
+
+    if (data.error_code !== undefined) {
+      const detail = data.error_detail ? `: ${data.error_detail}` : "";
+      throw new Error(`Live v4 "${method}" error [${data.error_code}] ${data.error_str ?? ""}${detail}`);
+    }
+    if (data.data === undefined) {
+      throw new Error(
+        `Unexpected Live v4 response for "${method}" (HTTP ${res.status}) — no "data" field: ${text.slice(0, 500)}`,
+      );
+    }
+    return data.data as T;
   }
 
   /**
